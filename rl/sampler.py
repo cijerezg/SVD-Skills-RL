@@ -139,8 +139,6 @@ class ReplayBuffer(hyper_params):
         self.cum_reward = np.zeros((size, 1), dtype=np.float32)
         self.norm_cum_reward = np.zeros((size, 1), dtype=np.float32)        
         self.ptr, self.size, self.max_size = 0, 0, size
-        self.idx_sampler = np.arange(size)
-        self.idx_tracker = np.zeros((size, 1), dtype=np.float32)
         self.threshold = 0.0
 
         self.sampling_ratio = reset_ratio
@@ -164,31 +162,15 @@ class ReplayBuffer(hyper_params):
         # idxs = np.array(idxs * self.size, dtype=np.int32)
 
         idxs = np.random.randint(0, self.size, size=int((1 - s_ratio) * 256))
-        
-        self.idx_tracker[idxs] += 1
 
-        idxs_off = np.random.randint(0, self.offline_size, size=int(s_ratio * 256))
-
-        obs = np.concatenate((self.obs_buf[idxs], self.offline_obs_buf[idxs_off]), axis=0)
-        z = np.concatenate((self.z_buf[idxs], self.offline_z_buf[idxs_off]), axis=0)
-        next_z = np.concatenate((self.next_z_buf[idxs], self.offline_next_z_buf[idxs_off]), axis=0)
-        next_obs = np.concatenate((self.next_obs_buf[idxs], self.offline_next_obs_buf[idxs_off]), axis=0)
-        rew = np.concatenate((self.rew_buf[idxs], self.offline_rew_buf[idxs_off]), axis=0)
-        done = np.concatenate((self.done_buf[idxs], self.offline_done_buf[idxs_off]), axis=0)
-        cum_r = np.concatenate((self.cum_reward[idxs], self.offline_cum_reward_buf[idxs_off]), axis=0)
-        norm_cum_r = np.concatenate((self.norm_cum_reward[idxs], self.offline_norm_cum_reward_buf[idxs_off]), axis=0)
-
-        total_idxs = np.concatenate((idxs, idxs_off), axis=0)
-
-        batch = AttrDict(observations=obs,
-                         next_observations=next_obs,
-                         z=z,
-                         next_z=next_z,
-                         rewards=rew,
-                         dones=done,
-                         cum_reward=cum_r,
-                         norm_cum_reward=norm_cum_r,
-                         idxs=total_idxs)
+        batch = AttrDict(observations=self.obs_buf[idxs],
+                         next_observations=self.next_obs_buf[idxs],
+                         z=self.z_buf[idxs],
+                         next_z=self.next_z_buf[idxs],
+                         rewards=self.rew_buf[idxs],
+                         dones=self.done_buf[idxs],
+                         cum_reward=self.cum_reward[idxs],
+                         norm_cum_reward=self.norm_cum_reward[idxs])
         return batch
 
 
@@ -200,63 +182,3 @@ class ReplayBuffer(hyper_params):
         self.norm_cum_reward[0:self.ptr, :] = (self.cum_reward[0:self.ptr, :] - mean) / (std + 1e-4)
 
 
-    def log_offline_dataset(self, path, params, eval_encoder, device):
-        dataset = torch.load(path)
-
-        dataset['rewards'] = self.d4rl_reward_map(dataset['rewards'])
-        dataset['rewards'] = dataset['rewards'].astype(np.float32)
-        
-        total_size = dataset['actions'].shape[0]
-        self.offline_size = int(total_size / self.length)
-        iters = 5000
-
-        self.offline_next_obs_buf = np.zeros((self.offline_size, *self.env.observation_space.shape),
-                                             dtype=np.float32)
-        self.offline_z_buf = np.zeros((self.offline_size, self.lat_dim), dtype=np.float32)
-        self.offline_next_z_buf = np.zeros((self.offline_size, self.lat_dim), dtype=np.float32)
-
-        keys = ['observations', 'actions', 'rewards', 'timeouts']
-        dataset = {key: dataset[key] for key in keys}
-
-        actions = torch.from_numpy(dataset['actions']).to(device)
-
-        batch_size = int(total_size / iters)
-        chunk = int(batch_size / self.length)
-
-        for i in range(iters):
-            with torch.no_grad():
-                z, pdf, mu, std = eval_encoder(actions[batch_size * i: batch_size * (i + 1), :], params)
-            mu = mu.cpu().numpy()
-            self.offline_z_buf[chunk * i: chunk * (i + 1), :] = mu
-            
-        self.offline_obs_buf = dataset['observations'][0::self.length]
-        self.offline_rew_buf = dataset['rewards'][0::self.length]
-        self.offline_done_buf = dataset['timeouts'][self.length-1::self.length]
-
-        cum_rewards, norm_cum_rewards = compute_cum_rewards(dataset)
-        self.offline_cum_reward_buf = cum_rewards
-        self.offline_norm_cum_reward_buf = norm_cum_rewards - 1
-
-        self.offline_cum_reward_buf = self.offline_cum_reward_buf[0::self.length]
-        self.offline_norm_cum_reward_buf = self.offline_norm_cum_reward_buf[0::self.length]
-
-        self.offline_next_obs_buf[0:self.offline_size - 1, :] = self.offline_obs_buf[1:, :]
-        self.offline_next_z_buf[0:self.offline_size - 1, :] = self.offline_z_buf[1:, :]
-
-        self.offline_obs_buf = self.offline_obs_buf[~self.offline_done_buf, :]
-        self.offline_z_buf = self.offline_z_buf[~self.offline_done_buf, :]
-        self.offline_next_obs_buf = self.offline_next_obs_buf[~self.offline_done_buf, :]
-        self.offline_next_z_buf = self.offline_next_z_buf[~self.offline_done_buf, :]
-        self.offline_rew_buf = self.offline_rew_buf[~self.offline_done_buf].reshape(-1, 1)
-        self.offline_cum_reward_buf = self.offline_cum_reward_buf[~self.offline_done_buf].reshape(-1, 1)
-        self.offline_norm_cum_reward_buf = self.offline_norm_cum_reward_buf[~self.offline_done_buf].reshape(-1, 1)
-        self.offline_done_buf = self.offline_done_buf[~self.offline_done_buf].reshape(-1, 1)
-        
-        self.offline_size = self.offline_obs_buf.shape[0]
-        
-    def d4rl_reward_map(self, reward):
-        if self.env_key == 'adroit':
-            return np.where(reward < 5, -.1, 10.0).astype(np.float32)
-
-        else:
-            return reward

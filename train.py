@@ -26,17 +26,52 @@ import pdb
 
 os.environ['WANDB_SILENT'] = "true"
 
-# env ids
-# antmaze-medium-diverse-v2
-# relocate-cloned-v1
-# pen-cloned-v1
-# kitchen-mixed-v0
-
 wandb.login()
 
-ENV_NAME = 'relocate-cloned-v1'
-PARENT_FOLDER = 'checkpoints_ant'
-CASE_FOLDER = 'New_Baseline'
+# The ids for envs are:
+
+ANT = 'antmaze-medium-diverse-v0'
+KITCHEN = 'kitchen-mixed-v0'
+RELOCATE = 'relocate-cloned-v1'
+PEN = 'pen-cloned-v1'
+
+ENV_NAME = RELOCATE
+
+PARENT_FOLDER = f'checkpoints/{ENV_NAME}'        
+CASE_FOLDER = 'Baseline'
+
+
+if 'ant' in ENV_NAME:
+    hyperparams_dict  = {'max_iterations': int(4e6) + 1,
+                         'buffer_size': int(4e6) + 1,
+                         'reset_frequency': 50000,
+                         'skill_length': 40,
+                         'test_freq': 400000}
+
+elif 'relocate' in ENV_NAME:
+    hyperparams_dict  = {'max_iterations': int(4e5) + 1,
+                         'buffer_size': int(4e5) + 1,
+                         'reset_frequency': 25000,
+                         'skill_length': 10,
+                         'test_freq': 100000}
+
+elif 'pen' in ENV_NAME:
+    hyperparams_dict  = {'max_iterations': int(4e5) + 1,
+                         'buffer_size': int(4e5) + 1,
+                         'reset_frequency': 25000,
+                         'skill_length': 10,
+                         'test_freq': 50000}
+
+elif 'kitchen' in ENV_NAME:
+    hyperparams_dict  = {'max_iterations': int(4e5) + 1,
+                         'buffer_size': int(4e5) + 1,
+                         'reset_frequency': 25000,
+                         'skill_length': 10,
+                         'test_freq': 100000}
+    
+else:
+    raise ValueError('This environment is not registered in the code')
+
 
 config = {
     # General hyperparams
@@ -45,26 +80,20 @@ config = {
     'env_id': ENV_NAME,
     
     # Offline hyperparams
-    'vae_batch_size': 1024,
+    'vae_batch_size': 256,
     'vae_lr': 6e-4,
     'priors_lr': 6e-4,
     'epochs': 401,
     'beta': 0.01,
-    'length': 10,
     'z_skill_dim': 12,
 
     # Online hyperparams  
     'batch_size': 256,
     'action_range': 4,
-    'critic_lr': 3e-4,
-    'actor_lr': 3e-4,
+    'learning_rate': 3e-4,
     'discount': 0.97,
     'delta_skill': 48,
     'gradient_steps': 16,
-    'max_iterations': int(640000 + 1),
-    'buffer_size': int(640000 + 1),
-    'test_freq': 100000,
-    'reset_frequency': 20000,
     'singular_val_k': 1,
 
     # Algo selection params
@@ -74,27 +103,25 @@ config = {
     'SAC': False,
     'SPiRL': False,
 
-    'save_data': False,
+    'folder_sing_vals': False,
     
     # Run params
-    'train_VAE_models': True,
-    'train_priors': False,
+    'train_offline': True,
     'train_rl': False,
-    'load_VAE_models': True,
-    'load_prior_models': True,
-    'load_rl_models': False,
-    'render_results': False
+    'load_offline_models': True,
+    'load_rl_models': True,
 }
 
 
-path_to_data = f'datasets/{ENV_NAME}.pt'
+config.update(hyperparams_dict)
 
 
 def main(config=None):
     """Train all modules."""
-    with wandb.init(project='SVD-Ant-Online', config=config,
-                    notes='SVD. The percentage of offline data was reduced.',
-                    name='SVD new try 2.0'):
+    offline = 'Offline' if config.train_offline else 'RL'
+    with wandb.init(project=f'SVD-{ENV_NAME}-{offline}', config=config,
+                    notes='SVD baseline.',
+                    name='SVD'):
 
         config = wandb.config
 
@@ -102,7 +129,7 @@ def main(config=None):
         hives = HIVES(config)
 
         if not config.train_rl:
-            hives.dataset_loader(path_to_data)
+            hives.dataset_loader()
 
         skill_policy = SkillPolicy(hives.state_dim, hives.action_range,
                                    latent_dim=hives.z_skill_dim).to(hives.device)
@@ -153,7 +180,7 @@ def main(config=None):
 
         print('Training is starting')
     
-        if config.train_VAE_models:
+        if config.train_offline:
             for e in range(config.epochs):
                 params = hives.train_vae(params,
                                          optimizers,
@@ -166,7 +193,6 @@ def main(config=None):
                         os.makedirs(path)
                     torch.save(params, f'{path}/params_{dt}_epoch{e}.pt')
                 
-        if config.train_priors:
             hives.set_skill_lookup(params)
             for i in range(config.epochs):
                 params = hives.train_prior(params, optimizers,
@@ -182,9 +208,6 @@ def main(config=None):
 
         if config.train_rl:
             params = vals.training(params, optimizers, path, CASE_FOLDER)
-
-        if config.render_results:
-            vals.render_results(params, f'videos/{config.env_id}/{CASE_FOLDER}')
 
             
 main(config=config)

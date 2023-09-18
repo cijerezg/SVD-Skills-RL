@@ -57,10 +57,10 @@ class VaLS(hyper_params):
 
         self.reward_per_episode = 0
         self.total_episode_counter = 0
-        self.reward_logger = [0]
+        self.reward_logger = []
         self.log_data = 0
         self.log_data_freq = 500
-        self.email = True
+
         
     def training(self, params, optimizers, path, name):
         self.iterations = 0
@@ -145,7 +145,7 @@ class VaLS(hyper_params):
 
         log_data = True if self.log_data % self.log_data_freq == 0 else False
 
-        if len(self.reward_logger) > 25 and log_data:
+        if len(self.reward_logger) > 10 and log_data:
             wandb.log({'Cumulative reward dist': wandb.Histogram(np.array(self.reward_logger))})
             wandb.log({'Average reward over 100 eps': np.mean(self.reward_logger[-100:])}, step=self.iterations)
 
@@ -175,11 +175,6 @@ class VaLS(hyper_params):
         return params, next_obs, done
 
     def losses(self, params, log_data, ref_params):
-        if self.SVD:
-            s_ratio = np.exp(- 4 * self.iterations / self.max_iterations - 1.4)#.7)
-        elif self.Replayratio or self.SAC or self.SPiRL or self.Underpameter:
-            s_ratio = 0.0
-
         batch = self.experience_buffer.sample(batch_size=self.batch_size, s_ratio=s_ratio)
 
         obs = torch.from_numpy(batch.observations).to(self.device)
@@ -190,7 +185,7 @@ class VaLS(hyper_params):
         dones = torch.from_numpy(batch.dones).to(self.device)
         cum_reward = torch.from_numpy(batch.cum_reward).to(self.device)
         norm_cum_reward = torch.from_numpy(batch.norm_cum_reward).to(self.device)
-        idxs = torch.from_numpy(batch.idxs).to(self.device)
+
         
         if log_data:
             singular_vals = self.compute_singular_vals(params)
@@ -234,19 +229,9 @@ class VaLS(hyper_params):
             wandb.log({'Critic/Mean diff dist rand': wandb.Histogram(mean_diff_rand.cpu()),
                        'Critic/Mean diff average rand': mean_diff_rand.mean().cpu(),
                        'Policy/Eval policy critic_random': eval_test_ave,
-                       'Critic/Offline ratio': s_ratio,
                        'Gradient updates': self.gradient_steps,
+                       'Reward batch': wandb.Histogram(rew.cpu())
                        })
-
-            bins = np.linspace(0, 200000, num=81)
-            vals = []
-            for i in range(bins.shape[0] - 1):
-                aux = self.experience_buffer.idx_tracker[i * 2500: 2500*(i + 1)].sum()
-                vals.append(aux)
-
-            vals = np.array(vals)
-            hist = (vals, bins)
-            wandb.log({'Logged idx': wandb.Histogram(np_histogram=hist)})
                                                                  
         ####
         target_critic_arg = torch.cat([next_obs, next_z], dim=1)
@@ -267,29 +252,14 @@ class VaLS(hyper_params):
             with torch.no_grad():
                 dist1 = self.distance_to_params(params, params, 'Critic1', 'Target_critic1')
 
-                q_refs, _ = self.eval_critic(critic_arg, ref_params)
-                q_refs_target, _ = self.eval_critic(target_critic_arg, ref_params,
-                                                    target_critic=True)
 
             bellman_terms = self.log_scatter_3d(q1, q_target.unsqueeze(dim=1), rew, cum_reward,
                                                 'Q val', 'Q target', 'Reward', 'Cum reward')
-            bellman_terms_ref = self.log_scatter_3d(q1, q_refs, cum_reward, idxs.unsqueeze(dim=1),
-                                                    'Q val', 'Q refs', 'Cum reward', 'Idxs')
             
-            with torch.no_grad():
-                diff_Q = q1 - q_refs
-                diff_Qt = q_target.reshape(-1, 1) - q_refs_target
-
-            diff_Qs = self.log_scatter_3d(diff_Q, diff_Qt, cum_reward, idxs.unsqueeze(dim=1),
-                                          'Diff Qs', 'Diff Q targets', 'Cum rewards', 'Idxs')
-
-
             wandb.log({'Critic/Distance critic to target 1': dist1,
-                       'Critic/Bellman terms': bellman_terms,
-                       'Critic/Bellman ref terms': bellman_terms_ref,
-                       'Critic/Diff Qs refs': diff_Qs})
+                       'Critic/Bellman terms': bellman_terms})
 
-        q_target = rew + (0.97 * q_target).reshape(-1, 1) * (1 - dones)
+        q_target = rew + (self.discount * q_target).reshape(-1, 1) * (1 - dones)
         q_target = torch.clamp(q_target, min=-100, max=100)
 
         critic1_loss = F.mse_loss(q1.squeeze(), q_target.squeeze(),
@@ -348,8 +318,7 @@ class VaLS(hyper_params):
                 z_ref, _, mu_ref, _ = self.eval_skill_policy(obs, ref_params)
                 q_pi_ref_arg = torch.cat([obs, z_ref], dim=1)
                 q_pi_ref, _ = self.eval_critic(q_pi_ref_arg, params)
-                mu_diff = F.l1_loss(mu, mu_ref, reduction='none').mean(1)
-                diff = q_pi.reshape(-1, 1) - q1
+
                 mu_diff_as = F.l1_loss(mu, z, reduction='none').mean(1)
 
             pi_diff = self.log_scatter_3d(q_pi.reshape(-1, 1), diff, mu_diff_as.unsqueeze(dim=1), cum_reward,
@@ -358,8 +327,6 @@ class VaLS(hyper_params):
             pi_reward = self.log_scatter_3d(q_pi.reshape(-1, 1), rew, mu_diff_as.unsqueeze(dim=1), cum_reward,
                                             'Q pi', 'Reward', 'Diff mu pi and z', 'Cum reward')
 
-            pi_terms = self.log_scatter_3d(q1, q_refs, mu_diff.unsqueeze(dim=1), idxs.unsqueeze(dim=1),
-                                           'Q val', 'Q refs', 'Mu diff', 'Idxs')
                 
             wandb.log(
                 {'Policy/current_q_values': wandb.Histogram(q_pi.detach().cpu()),
@@ -369,7 +336,6 @@ class VaLS(hyper_params):
                  'Policy/Z distribution': wandb.Histogram(z_sample.detach().cpu()),
                  'Policy/Mean STD': std.mean().detach().cpu(),
                  'Policy/Mu dist': wandb.Histogram(mu.detach().cpu()),
-                 'Policy/pi terms': pi_terms,
                  'Policy/Pi diff data': pi_diff,
                  'Policy/Pi reward': pi_reward,
                  })
@@ -381,8 +347,6 @@ class VaLS(hyper_params):
             wandb.log(
                 {'Critic/Critic loss': critic1_loss,
                  'Critic/Q values': wandb.Histogram(q1.detach().cpu())})
-
-            wandb.log({'Reward Percentage': sum(rew > 0.0) / self.batch_size})
         
         return policy_losses, critic1_loss, critic2_loss
 

@@ -16,6 +16,7 @@ from utilities.utils import hyper_params, compute_cum_rewards
 from models.nns import SkillPrior, LengthPrior
 from models.nns import Encoder, StateConditionedDecoder
 import wandb
+import gym
 import pdb
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -65,8 +66,7 @@ class HIVES(hyper_params):
         for i, idx in enumerate(self.loader):
             action = torch.from_numpy(self.dataset['actions'][idx]).to(self.device)
             obs = torch.from_numpy(self.dataset['observations'][idx]).to(self.device)
-            cum_reward = torch.from_numpy(self.dataset['norm_cum_rewards'][idx]).to(self.device)
-            recon_loss, kl_loss = self.vae_loss(action, obs, cum_reward, params, i)
+            recon_loss, kl_loss = self.vae_loss(action, obs, params, i)
             loss = recon_loss + beta * kl_loss
             losses = [loss]
             params_names = ['VAE_skills']
@@ -77,7 +77,7 @@ class HIVES(hyper_params):
         
         return params
 
-    def vae_loss(self, action, obs, cum_reward, params, i):
+    def vae_loss(self, action, obs, params, i):
         """VAE loss."""
         z_seq, pdf, mu, std = self.evaluate_encoder(action, params)
 
@@ -95,9 +95,6 @@ class HIVES(hyper_params):
         error = torch.square(action - rec).mean(1)
         rec_loss = -Normal(rec, 1).log_prob(action).sum(axis=-1).mean(1)
 
-        with torch.no_grad():
-            weights = F.sigmoid(cum_reward)
-
         if i == 0:
             wandb.log({'VAE/[encoder] STD':
                        wandb.Histogram(std.detach().cpu())})
@@ -109,13 +106,12 @@ class HIVES(hyper_params):
                 wandb.log({'VAE/MSE Distribution':
                            wandb.Histogram(error.detach().cpu())})
 
-        rec_loss = rec_loss * weights
+        rec_loss = rec_loss
 
         N = Normal(0, 1)
-        kl_loss = kl_divergence(pdf, N).mean(1)
-        kl_loss = kl_loss * weights
+        kl_loss = kl_divergence(pdf, N).mean()
 
-        return rec_loss.mean(), kl_loss.mean()
+        return rec_loss.mean(), kl_loss
 
     def evaluate_encoder(self, mu, params):
         """Evaluate encoder."""
@@ -137,15 +133,14 @@ class HIVES(hyper_params):
         for i, idx in enumerate(self.loader):
             obs = self.dataset['observations'][idx][:, 0, :]
             obs = torch.from_numpy(obs).to(self.device)
-            cum_reward = torch.from_numpy(self.dataset['norm_cum_rewards'][idx]).to(self.device)
-            prior_loss = self.skill_prior_loss(idx, obs, cum_reward, params, i)
+            prior_loss = self.skill_prior_loss(idx, obs, params, i)
             name = ['SkillPrior']
             loss = [prior_loss]
             params = Adam_update(params, loss, name, optimizers, lr)
 
         return params
     
-    def skill_prior_loss(self, idx, obs, cum_reward, params, i):
+    def skill_prior_loss(self, idx, obs, params, i):
         """Compute loss for skill prior."""
 
         prior = functional_call(self.models['SkillPrior'],
@@ -157,7 +152,7 @@ class HIVES(hyper_params):
         with torch.no_grad():
             weights = F.sigmoid(cum_reward)
         kl_loss = kl_divergence(prior, pdf).mean(1)
-        kl_loss = kl_loss *  weights
+        kl_loss = kl_loss
 
         if i == 0:
             wandb.log({'skill_prior/KL loss': kl_loss.mean().detach().cpu()})
@@ -191,29 +186,17 @@ class HIVES(hyper_params):
             loc, scale = pdf.loc, pdf.scale
             self.loc[j * bs_size: (j + 1) * bs_size, :] = loc
             self.scale[j * bs_size: (j + 1) * bs_size, :] = scale
-
-                
-    def load_dataset(self, path):
+        
+    def load_dataset(self):
         """Extract sequences of length max_length from episodes.
 
         This dataset requires to know when terminal states occur.
         """
-
-        pdb.set_trace()
-        data = torch.load(path)
         
-        if 'adroit' in self.env_key:
-            if 'pen' in self.env_key:
-                data['rewards'] = np.where(data['rewards'] < 55, -.1, 10.0 ).astype(np.float32)
-            elif 'relocate' in self.env_key:
-                data['rewards'] = np.where(data['rewards'] < 5, -.1, 10.0 ).astype(np.float32)
-
-        cum_rewards, norm_cum_rewards = compute_cum_rewards(data)
+        env = gym.make(self.env_id)
+        data = env.get_dataset()
         
-        data['cum_rewards'] = cum_rewards
-        data['norm_cum_rewards'] = norm_cum_rewards
-        
-        keys = ['actions', 'observations', 'norm_cum_rewards']
+        keys = ['actions', 'observations']
         dataset = {}
         self.max_length = self.length
 
@@ -249,7 +232,6 @@ class HIVES(hyper_params):
             seqs = seqs.reshape(-1, self.max_length, val_dim).squeeze()
             dataset[key] = seqs
 
-        dataset['norm_cum_rewards'] = dataset['norm_cum_rewards'][:, 0] # All cum rewards are same.
 
         self.dataset = dataset
         self.indexes = torch.arange(self.dataset['actions'].shape[0])       
