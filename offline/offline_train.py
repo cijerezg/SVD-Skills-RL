@@ -34,13 +34,13 @@ class HIVES(hyper_params):
         encoder = Encoder(
             self.z_skill_dim,
             self.action_dim,
-            self.length).to(self.device)
+            self.skill_length).to(self.device)
 
         decoder = StateConditionedDecoder(
             self.z_skill_dim,
             self.action_dim,
             self.state_dim,
-            self.length).to(self.device)
+            self.skill_length).to(self.device)
 
         self.models['Encoder'] = encoder
         self.models['Decoder'] = decoder
@@ -52,9 +52,9 @@ class HIVES(hyper_params):
 
         self.names.extend(['SkillPrior'])
 
-    def dataset_loader(self, path):
+    def dataset_loader(self):
         """Dataset is one single file."""
-        self.load_dataset(path)
+        self.load_dataset()
         
         dset_train = Drivedata(self.indexes)
 
@@ -66,7 +66,8 @@ class HIVES(hyper_params):
         for i, idx in enumerate(self.loader):
             action = torch.from_numpy(self.dataset['actions'][idx]).to(self.device)
             obs = torch.from_numpy(self.dataset['observations'][idx]).to(self.device)
-            recon_loss, kl_loss = self.vae_loss(action, obs, params, i)
+            weights = torch.from_numpy(self.dataset['weights'][idx]).to(self.device)
+            recon_loss, kl_loss = self.vae_loss(action, obs, weights, params, i)
             loss = recon_loss + beta * kl_loss
             losses = [loss]
             params_names = ['VAE_skills']
@@ -77,7 +78,7 @@ class HIVES(hyper_params):
         
         return params
 
-    def vae_loss(self, action, obs, params, i):
+    def vae_loss(self, action, obs, weights, params, i):
         """VAE loss."""
         z_seq, pdf, mu, std = self.evaluate_encoder(action, params)
 
@@ -85,13 +86,13 @@ class HIVES(hyper_params):
         self.models['Decoder'].func_embed_z(z_seq)
         
         rec = []
-        for j in range(self.length):
+        for j in range(self.skill_length):
             aux_rec = self.evaluate_decoder(obs[:, j, :], params)
             rec.append(aux_rec)
 
         rec = torch.stack(rec)
         rec = torch.swapaxes(rec, 0, 1)
-        
+
         error = torch.square(action - rec).mean(1)
         rec_loss = -Normal(rec, 1).log_prob(action).sum(axis=-1).mean(1)
 
@@ -106,16 +107,20 @@ class HIVES(hyper_params):
                 wandb.log({'VAE/MSE Distribution':
                            wandb.Histogram(error.detach().cpu())})
 
-        rec_loss = rec_loss
-
         N = Normal(0, 1)
-        kl_loss = kl_divergence(pdf, N).mean()
 
-        return rec_loss.mean(), kl_loss
+        with torch.no_grad():
+            weights = torch.exp(N.log_prob(weights.mean(1)))
+
+        rec_loss = rec_loss * weights
+
+        kl_loss = kl_divergence(pdf, N).mean(1) * weights
+
+        return rec_loss.mean(), kl_loss.mean()
 
     def evaluate_encoder(self, mu, params):
         """Evaluate encoder."""
-        mu = mu.reshape(-1, self.length, mu.shape[-1])
+        mu = mu.reshape(-1, self.skill_length, mu.shape[-1])
         z, pdf, mu, std = functional_call(self.models['Encoder'],
                                           params['Encoder'], mu)
 
@@ -130,17 +135,19 @@ class HIVES(hyper_params):
         
     def train_prior(self, params, optimizers, lr, length=True):
         """Trains one epoch of length prior."""
+        self.N = Normal(0, 1)
         for i, idx in enumerate(self.loader):
             obs = self.dataset['observations'][idx][:, 0, :]
             obs = torch.from_numpy(obs).to(self.device)
-            prior_loss = self.skill_prior_loss(idx, obs, params, i)
+            weights = torch.from_numpy(self.dataset['weights'][idx]).to(self.device)
+            prior_loss = self.skill_prior_loss(idx, obs, weights, params, i)
             name = ['SkillPrior']
             loss = [prior_loss]
             params = Adam_update(params, loss, name, optimizers, lr)
 
         return params
     
-    def skill_prior_loss(self, idx, obs, params, i):
+    def skill_prior_loss(self, idx, obs, weights, params, i):
         """Compute loss for skill prior."""
 
         prior = functional_call(self.models['SkillPrior'],
@@ -150,9 +157,10 @@ class HIVES(hyper_params):
         pdf = Normal(self.loc[idx, :], self.scale[idx, :])
 
         with torch.no_grad():
-            weights = F.sigmoid(cum_reward)
+            weights = torch.exp(self.N.log_prob(weights.mean(1)))
+
         kl_loss = kl_divergence(prior, pdf).mean(1)
-        kl_loss = kl_loss
+        kl_loss = kl_loss * weights
 
         if i == 0:
             wandb.log({'skill_prior/KL loss': kl_loss.mean().detach().cpu()})
@@ -195,15 +203,24 @@ class HIVES(hyper_params):
         
         env = gym.make(self.env_id)
         data = env.get_dataset()
-        
-        keys = ['actions', 'observations']
+       
+        keys = ['actions', 'observations', 'weights']
         dataset = {}
-        self.max_length = self.length
+        self.max_length = self.skill_length
 
         if 'adroit' in self.env_key:
             terminal_key = 'timeouts'
         elif 'kitchen' in self.env_key or 'ant' in self.env_key:
             terminal_key = 'terminals'
+
+        # Diff between actions based weights for VAE and Prior.
+        act_diffs = np.abs(np.diff(data['actions'], axis=0)).mean(1)
+        act_diffs = np.append(act_diffs, act_diffs[-1]).reshape(-1, 1)
+        aux_mean = act_diffs.mean()
+        act_diffs[data[terminal_key]] = aux_mean
+        act_diffs = (act_diffs - act_diffs.mean()) / (act_diffs.std() + 1e-4)
+
+        data['weights'] = act_diffs
 
         terminal_idxs = np.arange(len(data[terminal_key]))
         terminal_idxs = terminal_idxs[data[terminal_key]]
@@ -231,7 +248,6 @@ class HIVES(hyper_params):
             seqs = np.take(data[key], idxs, axis=0)
             seqs = seqs.reshape(-1, self.max_length, val_dim).squeeze()
             dataset[key] = seqs
-
 
         self.dataset = dataset
         self.indexes = torch.arange(self.dataset['actions'].shape[0])       

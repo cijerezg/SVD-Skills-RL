@@ -111,18 +111,12 @@ def load_pretrained_models(args, folder, filename):
     else:
         return pretrained_params
 
-    if args.load_VAE_models:
+    if args.load_offline_models:
         for key in params:
             if key == 'Encoder' or key == 'Decoder':
                 pretrained_params.append(params[key])
-            # if 'coder' in key:
-            #     number = int(''.join(filter(str.isdigit, key)))
-            #     if number in lengths:
-            #         pdb.set_trace()
-            #         pretrained_params.append(params[key])
         print('VAE params have been loaded.')
 
-    if args.load_prior_models:
         pretrained_params.append(params['SkillPrior'])
         print('Prior models have been loaded.')
 

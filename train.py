@@ -35,7 +35,7 @@ KITCHEN = 'kitchen-mixed-v0'
 RELOCATE = 'relocate-cloned-v1'
 PEN = 'pen-cloned-v1'
 
-ENV_NAME = RELOCATE
+ENV_NAME = KITCHEN
 
 PARENT_FOLDER = f'checkpoints/{ENV_NAME}'        
 CASE_FOLDER = 'Baseline'
@@ -83,7 +83,7 @@ config = {
     'vae_batch_size': 256,
     'vae_lr': 6e-4,
     'priors_lr': 6e-4,
-    'epochs': 401,
+    'epochs': 501,
     'beta': 0.01,
     'z_skill_dim': 12,
 
@@ -109,7 +109,7 @@ config = {
     'train_offline': True,
     'train_rl': False,
     'load_offline_models': True,
-    'load_rl_models': True,
+    'load_rl_models': False,
 }
 
 
@@ -118,7 +118,7 @@ config.update(hyperparams_dict)
 
 def main(config=None):
     """Train all modules."""
-    offline = 'Offline' if config.train_offline else 'RL'
+    offline = 'Offline' if config['train_offline'] else 'Online'
     with wandb.init(project=f'SVD-{ENV_NAME}-{offline}', config=config,
                     notes='SVD baseline.',
                     name='SVD'):
@@ -157,17 +157,18 @@ def main(config=None):
         
         names = [*hives.names, 'SkillPolicy', 'Critic1', 'Target_critic1',
                  'Critic2', 'Target_critic2']
-    
-        params_path = 'Prior/params_07-09-2023-16:04:05_offline.pt'
+
+        # Load params path
+        for root, dirs, files in os.walk(f'{PARENT_FOLDER}/Prior'):
+            if len(files) > 1:
+                raise ValueError('More than one params file.')
+            for filename in files:
+                params_path = os.path.join(root, filename)
         
         pretrained_params = load_pretrained_models(config, PARENT_FOLDER, params_path)
         pretrained_params.extend([None] * (len(names) - len(pretrained_params)))
         
         params = params_extraction(models, names, pretrained_params)
-
-        if config.train_rl:
-            vals.experience_buffer.log_offline_dataset(f'datasets/{ENV_NAME}.pt',
-                                                       params, hives.evaluate_encoder, hives.device)
         
         test_freq = config.epochs // 4
         test_freq = test_freq if test_freq > 0 else 1
@@ -176,7 +177,7 @@ def main(config=None):
         keys_optims.extend(['SkillPrior', 'SkillPolicy'])
         keys_optims.extend(['Critic1', 'Critic2'])
 
-        optimizers = set_optimizers(params, keys_optims, config.critic_lr)
+        optimizers = set_optimizers(params, keys_optims, config.learning_rate)
 
         print('Training is starting')
     

@@ -70,7 +70,7 @@ class Sampler(hyper_params):
             self.decoder.reset_hidden_state(z_sample)
             self.decoder.func_embed_z(z_sample)
 
-            for i in range(self.length):
+            for i in range(self.skill_length):
                 action = self.eval_decoder(obs_t, params)
                 action = action.cpu().detach().numpy()
                 action = action.squeeze()
@@ -156,12 +156,8 @@ class ReplayBuffer(hyper_params):
         self.ptr = (self.ptr + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
-    def sample(self, batch_size=32, s_ratio=1.0):
-        # idxs = np.random.randint(0, self.size, size=batch_size)
-        # idxs = np.random.power(1 + .25 * self.ptr / 1e5, size=batch_size)
-        # idxs = np.array(idxs * self.size, dtype=np.int32)
-
-        idxs = np.random.randint(0, self.size, size=int((1 - s_ratio) * 256))
+    def sample(self, batch_size=32):
+        idxs = np.random.randint(0, self.size, size=batch_size)
 
         batch = AttrDict(observations=self.obs_buf[idxs],
                          next_observations=self.next_obs_buf[idxs],
