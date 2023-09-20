@@ -101,11 +101,11 @@ def params_extraction(models: list,
     return params
 
 
-def load_pretrained_models(args, folder, filename):
+def load_pretrained_models(args, filename):
     """Load pretrained models."""
     pretrained_params = []
-    
-    path = f'{folder}/{filename}'
+
+    path = filename
     if os.path.isfile(path):
         params = torch.load(path)
     else:

@@ -32,10 +32,11 @@ wandb.login()
 
 ANT = 'antmaze-medium-diverse-v0'
 KITCHEN = 'kitchen-mixed-v0'
-RELOCATE = 'relocate-cloned-v1'
+RELOCATE_CLONED = 'relocate-cloned-v1'
+RELOCATE = 'relocate-expert-v1'
 PEN = 'pen-cloned-v1'
 
-ENV_NAME = KITCHEN
+ENV_NAME = RELOCATE
 
 PARENT_FOLDER = f'checkpoints/{ENV_NAME}'        
 CASE_FOLDER = 'Baseline'
@@ -49,23 +50,23 @@ if 'ant' in ENV_NAME:
                          'test_freq': 400000}
 
 elif 'relocate' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(4e5) + 1,
-                         'buffer_size': int(4e5) + 1,
-                         'reset_frequency': 25000,
+    hyperparams_dict  = {'max_iterations': int(1.6e5) + 1,
+                         'buffer_size': int(1.6e5) + 1,
+                         'reset_frequency': 5000,
                          'skill_length': 10,
-                         'test_freq': 100000}
+                         'test_freq': int(40000)}
 
 elif 'pen' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(4e5) + 1,
-                         'buffer_size': int(4e5) + 1,
-                         'reset_frequency': 25000,
+    hyperparams_dict  = {'max_iterations': int(8e4) + 1,
+                         'buffer_size': int(8e4) + 1,
+                         'reset_frequency': 2500,
                          'skill_length': 10,
                          'test_freq': 50000}
 
 elif 'kitchen' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(4e5) + 1,
-                         'buffer_size': int(4e5) + 1,
-                         'reset_frequency': 25000,
+    hyperparams_dict  = {'max_iterations': int(1.6e5) + 1,
+                         'buffer_size': int(1.6e5) + 1,
+                         'reset_frequency': 5000,
                          'skill_length': 10,
                          'test_freq': 100000}
     
@@ -92,7 +93,7 @@ config = {
     'action_range': 4,
     'learning_rate': 3e-4,
     'discount': 0.97,
-    'delta_skill': 48,
+    'delta_skill': 32,
     'gradient_steps': 16,
     'singular_val_k': 1,
 
@@ -103,12 +104,12 @@ config = {
     'SAC': False,
     'SPiRL': False,
 
-    'folder_sing_vals': False,
+    'folder_sing_vals': 'SVD',
     
     # Run params
     'train_offline': True,
     'train_rl': False,
-    'load_offline_models': True,
+    'load_offline_models': False,
     'load_rl_models': False,
 }
 
@@ -121,7 +122,7 @@ def main(config=None):
     offline = 'Offline' if config['train_offline'] else 'Online'
     with wandb.init(project=f'SVD-{ENV_NAME}-{offline}', config=config,
                     notes='SVD baseline.',
-                    name='SVD'):
+                    name='SVD sparse 3.0 (repeat)'):
 
         config = wandb.config
 
@@ -165,14 +166,11 @@ def main(config=None):
             for filename in files:
                 params_path = os.path.join(root, filename)
         
-        pretrained_params = load_pretrained_models(config, PARENT_FOLDER, params_path)
+        pretrained_params = load_pretrained_models(config, params_path)
         pretrained_params.extend([None] * (len(names) - len(pretrained_params)))
         
         params = params_extraction(models, names, pretrained_params)
-        
-        test_freq = config.epochs // 4
-        test_freq = test_freq if test_freq > 0 else 1
-    
+            
         keys_optims = ['VAE_skills']
         keys_optims.extend(['SkillPrior', 'SkillPolicy'])
         keys_optims.extend(['Critic1', 'Critic2'])
@@ -187,12 +185,6 @@ def main(config=None):
                                          optimizers,
                                          config.vae_lr,
                                          config.beta)
-                if e % test_freq == 0:
-                    print(f'Epoch is {e}')
-                    dt = datetime.now().strftime("%d-%m-%Y-%H:%M:%S")
-                    if not os.path.exists(path):
-                        os.makedirs(path)
-                    torch.save(params, f'{path}/params_{dt}_epoch{e}.pt')
                 
             hives.set_skill_lookup(params)
             for i in range(config.epochs):

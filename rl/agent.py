@@ -56,10 +56,11 @@ class VaLS(hyper_params):
         self.optimizer_alpha_skill = Adam([self.log_alpha_skill], lr=args.learning_rate)
 
         self.reward_per_episode = 0
+        self.steps_per_episode = 0
         self.total_episode_counter = 0
         self.reward_logger = []
         self.log_data = 0
-        self.log_data_freq = 500
+        self.log_data_freq = 200
 
         
     def training(self, params, optimizers, path, name):
@@ -113,7 +114,6 @@ class VaLS(hyper_params):
                                                         device=self.device)
                     self.optimizer_alpha_skill = Adam([self.log_alpha_skill], lr=self.learning_rate)
                     
-                    self.experience_buffer.idx_tracker[:] = 0
                 
         return params
 
@@ -130,6 +130,7 @@ class VaLS(hyper_params):
         next_obs, rew, z, next_z, done = data
 
         self.reward_per_episode += rew
+        self.steps_per_episode += 1
 
         self.experience_buffer.add(obs, next_obs, z, next_z, rew, done)
 
@@ -137,10 +138,12 @@ class VaLS(hyper_params):
             if self.total_episode_counter > 2:
                 self.experience_buffer.update_tracking_buffers(self.reward_per_episode)
             wandb.log({'Reward per episode': self.reward_per_episode,
+                       'Steps per episode': self.skill_length * self.steps_per_episode,
                        'Total episodes': self.total_episode_counter})
 
             self.reward_logger.append(self.reward_per_episode)
             self.reward_per_episode = 0
+            self.steps_per_episode = 0
             self.total_episode_counter += 1
 
         log_data = True if self.log_data % self.log_data_freq == 0 else False

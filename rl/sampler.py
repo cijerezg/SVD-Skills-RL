@@ -78,8 +78,9 @@ class Sampler(hyper_params):
 
                 # Relocate environment does not use done. It uses info.
                 obs_t = torch.from_numpy(obs).to(self.device).to(torch.float32)
-                if self.env_key == 'adroit':
-                    done = True if done or info['success'] else False
+
+                if 'adroit' in self.env_key:
+                    done = True if done or info['goal_achieved'] else False
                 # Collect trajectories
                 obs_trj.append(obs)
                 rew_trj.append(rew)
