@@ -105,6 +105,9 @@ def load_pretrained_models(args, filename):
     """Load pretrained models."""
     pretrained_params = []
 
+    if filename is None:
+        return pretrained_params
+
     path = filename
     if os.path.isfile(path):
         params = torch.load(path)

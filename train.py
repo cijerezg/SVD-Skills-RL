@@ -30,9 +30,8 @@ wandb.login()
 
 # The ids for envs are:
 
-ANT = 'antmaze-medium-diverse-v0'
+ANT = 'antmaze-medium-diverse-v2'
 KITCHEN = 'kitchen-mixed-v0'
-RELOCATE_CLONED = 'relocate-cloned-v1'
 RELOCATE = 'relocate-expert-v1'
 PEN = 'pen-cloned-v1'
 
@@ -107,9 +106,9 @@ config = {
     'folder_sing_vals': 'SVD',
     
     # Run params
-    'train_offline': True,
-    'train_rl': False,
-    'load_offline_models': False,
+    'train_offline': False,
+    'train_rl': True,
+    'load_offline_models': True,
     'load_rl_models': False,
 }
 
@@ -121,8 +120,8 @@ def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
     with wandb.init(project=f'SVD-{ENV_NAME}-{offline}', config=config,
-                    notes='SVD baseline.',
-                    name='SVD sparse 3.0 (repeat)'):
+                    notes='SVD training.',
+                    name='SVD 1k trajectories'):
 
         config = wandb.config
 
@@ -160,12 +159,13 @@ def main(config=None):
                  'Critic2', 'Target_critic2']
 
         # Load params path
+        params_path = None
         for root, dirs, files in os.walk(f'{PARENT_FOLDER}/Prior'):
             if len(files) > 1:
                 raise ValueError('More than one params file.')
             for filename in files:
                 params_path = os.path.join(root, filename)
-        
+                
         pretrained_params = load_pretrained_models(config, params_path)
         pretrained_params.extend([None] * (len(names) - len(pretrained_params)))
         

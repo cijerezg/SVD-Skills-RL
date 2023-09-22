@@ -77,7 +77,7 @@ class HIVES(hyper_params):
         
         return params
 
-    def vae_loss(self, action, obs, weights, params, i):
+    def vae_loss(self, action, obs, params, i):
         """VAE loss."""
         z_seq, pdf, mu, std = self.evaluate_encoder(action, params)
 
@@ -191,7 +191,11 @@ class HIVES(hyper_params):
         
         env = gym.make(self.env_id)
         data = env.get_dataset()
-       
+
+        if 'relocate' in self.env_id:
+            for val in ['actions', 'observations', 'timeouts']:
+                data[val] = data[val][:200000]
+
         keys = ['actions', 'observations']
         dataset = {}
         self.max_length = self.skill_length

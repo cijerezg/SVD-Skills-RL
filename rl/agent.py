@@ -99,6 +99,7 @@ class VaLS(hyper_params):
                     if self.SVD:
                         self.reset_frequency = 2 * self.reset_frequency
                     self.gradient_steps = math.ceil(self.gradient_steps / 2)
+                    self.gradient_steps = np.maximum(4, self.gradient_steps)
                     self.interval_iteration = 0
                     keys = ['SkillPolicy', 'Critic1', 'Critic2']
                     ref_params = copy.deepcopy(params)
@@ -107,7 +108,7 @@ class VaLS(hyper_params):
                         params, optimizers = reset_params(params, keys, optimizers, self.learning_rate)
                     elif self.SVD:
                         params, optimizers = self.rescale_singular_vals(params, keys, optimizers, self.learning_rate)
-                        self.singular_val_k = 2 * self.singular_val_k
+                        self.singular_val_k = 1.5 * self.singular_val_k
                         
                     self.log_alpha_skill = torch.tensor(INIT_LOG_ALPHA, dtype=torch.float32,
                                                         requires_grad=True,
