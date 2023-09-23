@@ -42,12 +42,12 @@ CASE_FOLDER = 'Baseline'
 
 
 if 'ant' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(4e6) + 1,
-                         'buffer_size': int(4e6) + 1,
-                         'reset_frequency': 50000,
+    hyperparams_dict  = {'max_iterations': int(8e4) + 1,
+                         'buffer_size': int(8e4) + 1,
+                         'reset_frequency': 5000,
                          'skill_length': 40,
-                         'delta_skill': 16,
-                         'test_freq': 400000}
+                         'delta_skill': 12,
+                         'test_freq': 40000}
 
 elif 'relocate' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(8e4) + 1,
@@ -70,7 +70,7 @@ elif 'kitchen' in ENV_NAME:
                          'buffer_size': int(1.6e5) + 1,
                          'reset_frequency': 10000,
                          'skill_length': 10,
-                         'delta_skill': 16,
+                         'delta_skill': 32,
                          'test_freq': 100000}
     
 else:
@@ -96,6 +96,7 @@ config = {
     'action_range': 4,
     'learning_rate': 3e-4,
     'discount': 0.97,
+    'sing_val_factor': 2, 
     'gradient_steps': 16,
     'singular_val_k': 1,
 
@@ -124,7 +125,7 @@ def main(config=None):
     offline = 'Offline' if config['train_offline'] else 'Online'
     with wandb.init(project=f'SVD-{ENV_NAME}-{offline}', config=config,
                     notes='SVD training.',
-                    name='SVD more iters'):
+                    name='SVD delta 32(original)'):
 
         config = wandb.config
 
