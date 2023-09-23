@@ -35,7 +35,7 @@ KITCHEN = 'kitchen-mixed-v0'
 RELOCATE = 'relocate-expert-v1'
 PEN = 'pen-cloned-v1'
 
-ENV_NAME = RELOCATE
+ENV_NAME = KITCHEN
 
 PARENT_FOLDER = f'checkpoints/{ENV_NAME}'        
 CASE_FOLDER = 'Baseline'
@@ -46,13 +46,15 @@ if 'ant' in ENV_NAME:
                          'buffer_size': int(4e6) + 1,
                          'reset_frequency': 50000,
                          'skill_length': 40,
+                         'delta_skill': 16,
                          'test_freq': 400000}
 
 elif 'relocate' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(1.6e5) + 1,
-                         'buffer_size': int(1.6e5) + 1,
+    hyperparams_dict  = {'max_iterations': int(8e4) + 1,
+                         'buffer_size': int(8e4) + 1,
                          'reset_frequency': 5000,
                          'skill_length': 10,
+                         'delta_skill': 32,
                          'test_freq': int(40000)}
 
 elif 'pen' in ENV_NAME:
@@ -60,13 +62,15 @@ elif 'pen' in ENV_NAME:
                          'buffer_size': int(8e4) + 1,
                          'reset_frequency': 2500,
                          'skill_length': 10,
+                         'delta_skill': 32,
                          'test_freq': 50000}
 
 elif 'kitchen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(1.6e5) + 1,
                          'buffer_size': int(1.6e5) + 1,
-                         'reset_frequency': 5000,
+                         'reset_frequency': 10000,
                          'skill_length': 10,
+                         'delta_skill': 16,
                          'test_freq': 100000}
     
 else:
@@ -92,7 +96,6 @@ config = {
     'action_range': 4,
     'learning_rate': 3e-4,
     'discount': 0.97,
-    'delta_skill': 32,
     'gradient_steps': 16,
     'singular_val_k': 1,
 
@@ -121,7 +124,7 @@ def main(config=None):
     offline = 'Offline' if config['train_offline'] else 'Online'
     with wandb.init(project=f'SVD-{ENV_NAME}-{offline}', config=config,
                     notes='SVD training.',
-                    name='SVD 1k trajectories'):
+                    name='SVD more iters'):
 
         config = wandb.config
 
