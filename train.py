@@ -42,16 +42,16 @@ CASE_FOLDER = 'Baseline'
 
 
 if 'ant' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(8e4) + 1,
-                         'buffer_size': int(8e4) + 1,
-                         'reset_frequency': 5000,
+    hyperparams_dict  = {'max_iterations': int(1.6e5) + 1,
+                         'buffer_size': int(1.6e5) + 1,
+                         'reset_frequency': 25000,
                          'skill_length': 40,
                          'delta_skill': 12,
                          'test_freq': 40000}
 
 elif 'relocate' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(8e4) + 1,
-                         'buffer_size': int(8e4) + 1,
+    hyperparams_dict  = {'max_iterations': int(4e4) + 1,
+                         'buffer_size': int(4e4) + 1,
                          'reset_frequency': 5000,
                          'skill_length': 10,
                          'delta_skill': 32,
@@ -64,7 +64,7 @@ elif 'pen' in ENV_NAME:
                          'skill_length': 10,
                          'delta_skill': 32,
                          'test_freq': 50000}
-
+    
 elif 'kitchen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(1.6e5) + 1,
                          'buffer_size': int(1.6e5) + 1,
