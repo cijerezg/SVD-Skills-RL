@@ -194,7 +194,7 @@ class HIVES(hyper_params):
 
         if 'relocate' in self.env_id:
             for val in ['actions', 'observations', 'timeouts']:
-                data[val] = data[val][:200000]
+                data[val] = data[val][:20000]
 
         keys = ['actions', 'observations']
         dataset = {}
