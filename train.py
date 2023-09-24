@@ -44,7 +44,7 @@ CASE_FOLDER = 'Baseline'
 if 'ant' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(1.6e5) + 1,
                          'buffer_size': int(1.6e5) + 1,
-                         'reset_frequency': 25000,
+                         'reset_frequency': 20000,
                          'skill_length': 40,
                          'delta_skill': 12,
                          'test_freq': 40000}
@@ -71,7 +71,7 @@ elif 'kitchen' in ENV_NAME:
                          'reset_frequency': 10000,
                          'skill_length': 10,
                          'delta_skill': 32,
-                         'test_freq': 100000}
+                         'test_freq': 80000}
     
 else:
     raise ValueError('This environment is not registered in the code')
