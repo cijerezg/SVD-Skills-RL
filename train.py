@@ -35,7 +35,7 @@ KITCHEN = 'kitchen-mixed-v0'
 RELOCATE = 'relocate-expert-v1'
 PEN = 'pen-cloned-v1'
 
-ENV_NAME = RELOCATE
+ENV_NAME = KITCHEN
 
 PARENT_FOLDER = f'checkpoints/{ENV_NAME}'        
 CASE_FOLDER = 'Baseline'
@@ -125,7 +125,7 @@ def main(config=None):
     offline = 'Offline' if config['train_offline'] else 'Online'
     with wandb.init(project=f'SVD-{ENV_NAME}-{offline}', config=config,
                     notes='SVD training.',
-                    name='SERENE'):
+                    name='Test'):
 
         config = wandb.config
 
