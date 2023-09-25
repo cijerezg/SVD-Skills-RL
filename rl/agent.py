@@ -94,14 +94,14 @@ class VaLS(hyper_params):
                 wandb.log({'Iterations': self.iterations})
             self.iterations += 1
 
-            if self.SVD or self.Replayratio:
+            if self.SERENE or self.Replayratio:
                 if self.iterations % self.reset_frequency == 0:
-                    if self.SVD:
+                    if self.SERENE:
                         self.reset_frequency = 2 * self.reset_frequency
                     self.gradient_steps = math.ceil(self.gradient_steps / 2)
                     self.gradient_steps = np.maximum(4, self.gradient_steps)
                     self.interval_iteration = 0
-                    keys = ['SkillPolicy', 'Critic1', 'Critic2']
+                    keys = ['SkillPolicy', 'Critic']
                     ref_params = copy.deepcopy(params)
                     
                     if self.Replayratio:
@@ -160,18 +160,16 @@ class VaLS(hyper_params):
             
             for i in range(self.gradient_steps):
                 log_data = log_data if i == 0 else False # Only log data once for multi grad steps.
-                policy_losses, critic1_loss, critic2_loss = self.losses(params, log_data, ref_params)
-                losses = [*policy_losses, critic1_loss, critic2_loss]
-                names = ['SkillPolicy', 'Critic1', 'Critic2']
+                policy_losses, critic_loss = self.losses(params, log_data, ref_params)
+                losses = [*policy_losses, critic_loss]
+                names = ['SkillPolicy', 'Critic']
                 params = Adam_update(params, losses, names, optimizers, lr)
-                polyak_update(params['Critic1'].values(),
-                              params['Target_critic1'].values(), 0.005)
-                polyak_update(params['Critic2'].values(),
-                              params['Target_critic2'].values(), 0.005)
+                polyak_update(params['Critic'].values(),
+                              params['Target_critic'].values(), 0.005)
 
                 if log_data:
                     with torch.no_grad():
-                        dist_init1 = self.distance_to_params(params, ref_params, 'Critic1', 'Critic1')
+                        dist_init1 = self.distance_to_params(params, ref_params, 'Critic', 'Critic')
                         dist_init_pol = self.distance_to_params(params, ref_params, 'SkillPolicy', 'SkillPolicy')
                     
                         wandb.log({'Critic/Distance to init weights': dist_init1,
@@ -194,8 +192,8 @@ class VaLS(hyper_params):
         if log_data:
             singular_vals = self.compute_singular_vals(params)
             if self.folder_sing_vals is not None:
-                dt_string = datetime.now().strftime("%d-%m-%Y-%H:%M:%S")
-                path = f'results/{self.env_key}/{self.folder_sing_vals}/{self.iterations}'
+                dt_string = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+                path = f'results/{self.env_key}/{self.folder_sing_vals}/{self.iterations * self.skill_length}'
                 if not os.path.exists(path):
                     os.makedirs(path)
                 np.save(f'{path}/{dt_string}.npy', singular_vals, allow_pickle=True)
@@ -220,17 +218,17 @@ class VaLS(hyper_params):
             new_critic_arg_rand = torch.cat([new_obs, z_rand], dim=1)
         
             with torch.no_grad():
-                q1_r, q2_r = self.eval_critic(critic_test_arg, params)
+                q_r, _ = self.eval_critic(critic_test_arg, params)
                 
-                q1_rep, q2_rep = self.eval_critic(new_critic_arg, params)
-                q1_rep, q2_rep = q1_rep.reshape(-1, trials, 1), q2_rep.reshape(-1, trials, 1)
+                q_rep, _ = self.eval_critic(new_critic_arg, params)
+                q_rep = q_rep.reshape(-1, trials, 1)
 
-                q1_rand, _ = self.eval_critic(new_critic_arg_rand, params)
-                q1_rand = q1_rand.reshape(-1, trials, 1)
+                q_rand, _ = self.eval_critic(new_critic_arg_rand, params)
+                q_rand = q_rand.reshape(-1, trials, 1)
 
-                mean_diff_rand = q1_r - q1_rand.mean(1)
+                mean_diff_rand = q_r - q_rand.mean(1)
 
-            eval_test_ave = self.log_scatter_3d(q1_r, q1_rand.mean(1), cum_reward, rew,
+            eval_test_ave = self.log_scatter_3d(q_r, q_rand.mean(1), cum_reward, rew,
                                                 'Q val', 'Q random', 'Cum reward', 'Reward')
 
             wandb.log({'Critic/Mean diff dist rand': wandb.Histogram(mean_diff_rand.cpu()),
@@ -247,19 +245,16 @@ class VaLS(hyper_params):
         with torch.no_grad():                                
             z_prior = self.eval_skill_prior(obs, params)
 
-            q_target1, q_target2 = self.eval_critic(target_critic_arg, params,
-                                                    target_critic=True)
-            
-        q_target = torch.cat((q_target1, q_target2), dim=1)
-        q_target, _ = torch.min(q_target, dim=1)
+            q_target, _ = self.eval_critic(target_critic_arg, params,
+                                           target_critic=True)
 
-        q1, q2 = self.eval_critic(critic_arg, params)
+        q, features = self.eval_critic(critic_arg, params)
         
         if log_data:
             with torch.no_grad():
                 dist1 = self.distance_to_params(params, params, 'Critic1', 'Target_critic1')
 
-            bellman_terms = self.log_scatter_3d(q1, q_target.unsqueeze(dim=1), rew, cum_reward,
+            bellman_terms = self.log_scatter_3d(q, q_target.unsqueeze(dim=1), rew, cum_reward,
                                                 'Q val', 'Q target', 'Reward', 'Cum reward')
             
             wandb.log({'Critic/Distance critic to target 1': dist1,
@@ -268,39 +263,34 @@ class VaLS(hyper_params):
         q_target = rew + (self.discount * q_target).reshape(-1, 1) * (1 - dones)
         q_target = torch.clamp(q_target, min=-100, max=100)
 
-        critic1_loss = F.mse_loss(q1.squeeze(), q_target.squeeze(),
-                                  reduction='none')
-        critic2_loss = F.mse_loss(q2.squeeze(), q_target.squeeze(),
-                                  reduction='none')        
+        critic_loss = F.mse_loss(q.squeeze(), q_target.squeeze(),
+                                 reduction='none')
 
-        if self.SVD:
+        if self.SERENE:
             with torch.no_grad():
                 weights = F.sigmoid(norm_cum_reward).squeeze()
         else:
-            weights = torch.ones_like(critic1_loss)
+            weights = torch.ones_like(critic_loss)
 
-        critic1_loss = critic1_loss * weights
-        critic2_loss = critic2_loss * weights
+        critic_loss = critic_loss * weights
                 
-        critic1_loss = critic1_loss.mean()
-        critic2_loss = critic2_loss.mean()
+        critic_loss = critic_loss.mean()
+
+        if self.Underparameter:
+            sing_vals_loss = self.compute_singular_vals_loss(features)
+            critic_loss = critic_loss + 0.001 * sing_vals_loss            
         
         if log_data:
             wandb.log(
-                {'Critic/Critic1 Grad Norm': self.get_gradient(critic1_loss, params, 'Critic1')})
+                {'Critic/Critic1 Grad Norm': self.get_gradient(critic_loss, params, 'Critic')})
         
         z_sample, pdf, mu, std = self.eval_skill_policy(obs, params)
 
         q_pi_arg = torch.cat([obs, z_sample], dim=1)
         
-        q_pi1, q_pi2 = self.eval_critic(q_pi_arg, params)
-        q_pi = torch.cat((q_pi1, q_pi2), dim=1)
-        q_pi, _ = torch.min(q_pi, dim=1)
+        q_pi, _ = self.eval_critic(q_pi_arg, params)
         
-        if self.SAC or self.Replayratio or self.Underparameter:
-            skill_prior = torch.clamp(pdf.entropy(), max=MAX_SKILL_KL).mean()
-        elif self.SPiRL or self.SVD:
-            skill_prior = torch.clamp(kl_divergence(pdf, z_prior), max=MAX_SKILL_KL).mean()
+        skill_prior = torch.clamp(kl_divergence(pdf, z_prior), max=MAX_SKILL_KL).mean()
         
         alpha_skill = torch.exp(self.log_alpha_skill).detach()
         skill_prior_loss = alpha_skill * skill_prior
@@ -321,10 +311,6 @@ class VaLS(hyper_params):
           
         if log_data:
             with torch.no_grad():
-                z_ref, _, mu_ref, _ = self.eval_skill_policy(obs, ref_params)
-                q_pi_ref_arg = torch.cat([obs, z_ref], dim=1)
-                q_pi_ref, _ = self.eval_critic(q_pi_ref_arg, params)
-
                 mu_diff_as = F.l1_loss(mu, z, reduction='none').mean(1)
 
             pi_reward = self.log_scatter_3d(q_pi.reshape(-1, 1), rew, mu_diff_as.unsqueeze(dim=1), cum_reward,
@@ -346,10 +332,10 @@ class VaLS(hyper_params):
                  'Priors/skill_prior_loss': skill_prior.detach().cpu()})
 
             wandb.log(
-                {'Critic/Critic loss': critic1_loss,
-                 'Critic/Q values': wandb.Histogram(q1.detach().cpu())})
+                {'Critic/Critic loss': critic_loss,
+                 'Critic/Q values': wandb.Histogram(q.detach().cpu())})
         
-        return policy_losses, critic1_loss, critic2_loss
+        return policy_losses, critic_loss 
 
     def eval_skill_prior(self, state, params):
         """Evaluate the policy.
@@ -378,40 +364,13 @@ class VaLS(hyper_params):
 
     def eval_critic(self, arg, params, target_critic=False):
         if target_critic:
-            name1, name2 = 'Target_critic1', 'Target_critic2'
+            name = 'Target_critic'
         else:
-            name1, name2 = 'Critic1', 'Critic2'
+            name = 'Critic'
 
-        q1 = functional_call(self.critic, params[name1], arg)
-        q2 = functional_call(self.critic, params[name2], arg)
+        q, features = functional_call(self.critic, params[name], arg)
 
-        return q1, q2
-
-    def computation_state_vae(self, critic_arg, params):
-        names = ['StateEncoder', 'StateDecoder']
-        z, pdf, mu, std, rec = self.eval_state_vae(critic_arg, params, names)
-        rec_loss = -Normal(rec, 1).log_prob(critic_arg).sum(axis=-1)
-        N = Normal(0, 1)
-        kl_loss = torch.mean(kl_divergence(pdf, N))
-        loss = rec_loss.mean() + 0.01 * kl_loss
-
-        with torch.no_grad():
-            names2 = ['TargetEncoder', 'TargetDecoder']
-            _, _, _, _, rec_target = self.eval_state_vae(critic_arg, params, names2)
-            weights = F.mse_loss(critic_arg, rec_target, reduction='none')
-            weights = weights.mean(1)
-            
-        return loss, weights
-
-    def eval_state_vae(self, critic_arg, params, names):
-        z, pdf, mu, std = functional_call(self.state_encoder,
-                                          params[names[0]],
-                                          critic_arg)
-
-        rec = functional_call(self.state_decoder,
-                              params[names[1]], z)
-
-        return z, pdf, mu, std, rec
+        return q, features
 
     def log_histogram_2d(self, x, y, xlabel, ylabel):
         x = x.detach().cpu().numpy()
@@ -444,7 +403,7 @@ class VaLS(hyper_params):
         return fig_scatter
 
     def compute_singular_vals(self, params):
-        models = ['Critic1', 'SkillPolicy']
+        models = ['Critic', 'SkillPolicy']
         nicknames = ['Critic', 'Policy']
 
         singular_vals = {}
@@ -476,39 +435,9 @@ class VaLS(hyper_params):
 
         return params, optimizers
 
-    def compute_singular_vals_loss(self, params):
-        models = ['Critic1', 'Critic2', 'SkillPolicy']
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        # TODO
-        
+    def compute_singular_vals_loss(self, features):
+        S = torch.linalg.svdvals(features)
+        return torch.square(S[0]) - torch.square(S[-1])
 
     def get_gradient(self, x, params, key):
         grads = autograd.grad(x, params[key].values(), retain_graph=True,

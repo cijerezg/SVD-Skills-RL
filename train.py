@@ -36,6 +36,7 @@ RELOCATE = 'relocate-expert-v1'
 PEN = 'pen-cloned-v1'
 
 ENV_NAME = KITCHEN
+EXP_NAME = 'SERENE'
 
 PARENT_FOLDER = f'checkpoints/{ENV_NAME}'        
 CASE_FOLDER = 'Baseline'
@@ -60,16 +61,16 @@ elif 'relocate' in ENV_NAME:
 elif 'pen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(8e4) + 1,
                          'buffer_size': int(8e4) + 1,
-                         'reset_frequency': 2500,
+                         'reset_frequency': 5000,
                          'skill_length': 10,
                          'delta_skill': 32,
                          'test_freq': 50000}
     
 elif 'kitchen' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(1.6e5) + 1,
-                         'buffer_size': int(1.6e5) + 1,
+    hyperparams_dict  = {'max_iterations': int(8e4) + 1,
+                         'buffer_size': int(8e4) + 1,
                          'reset_frequency': 10000,
-                         'skill_length': 10,
+                         'skill_length': 20,
                          'delta_skill': 32,
                          'test_freq': 80000}
     
@@ -101,18 +102,17 @@ config = {
     'singular_val_k': 1,
 
     # Algo selection params
-    'SVD': True,
-    'Replayratio': False,
-    'Underparameter': False,
-    'SAC': False,
-    'SPiRL': False,
+    'SERENE': True if 'SENERE' in EXP_NAME else False ,
+    'Replayratio': True if 'Replayratio' in EXP_NAME else False,
+    'Underparameter': True if 'Underparameter' in EXP_NAME else False,
+    'SPiRL': True if 'SPiRL' in EXP_NAME else False,
 
-    'folder_sing_vals': 'SVD',
+    'folder_sing_vals': EXP_NAME,
     
     # Run params
     'train_offline': False,
     'train_rl': True,
-    'load_offline_models': True,
+    'load_offline_models': False,
     'load_rl_models': False,
 }
 
@@ -123,9 +123,9 @@ config.update(hyperparams_dict)
 def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
-    with wandb.init(project=f'SVD-{ENV_NAME}-{offline}', config=config,
-                    notes='SVD training. Run 25 episodes before training.',
-                    name='SERENE'):
+    with wandb.init(project=f'Test-SVD-{ENV_NAME}-{offline}', config=config,
+                    notes='Training.',
+                    name=EXP_NAME):
 
         config = wandb.config
 
@@ -159,8 +159,7 @@ def main(config=None):
                   vals.critic, vals.critic,
                   vals.critic, vals.critic]
         
-        names = [*hives.names, 'SkillPolicy', 'Critic1', 'Target_critic1',
-                 'Critic2', 'Target_critic2']
+        names = [*hives.names, 'SkillPolicy', 'Critic', 'Target_critic']
 
         # Load params path
         params_path = None
@@ -177,7 +176,7 @@ def main(config=None):
             
         keys_optims = ['VAE_skills']
         keys_optims.extend(['SkillPrior', 'SkillPolicy'])
-        keys_optims.extend(['Critic1', 'Critic2'])
+        keys_optims.extend(['Critic'])
 
         optimizers = set_optimizers(params, keys_optims, config.learning_rate)
 

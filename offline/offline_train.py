@@ -66,6 +66,8 @@ class HIVES(hyper_params):
         for i, idx in enumerate(self.loader):
             action = torch.from_numpy(self.dataset['actions'][idx]).to(self.device)
             obs = torch.from_numpy(self.dataset['observations'][idx]).to(self.device)
+            if len(obs.shape) == 2:  # This is to prevent when batch size is 1
+                continue
             recon_loss, kl_loss = self.vae_loss(action, obs, params, i)
             loss = recon_loss + beta * kl_loss
             losses = [loss]
@@ -130,6 +132,8 @@ class HIVES(hyper_params):
     def train_prior(self, params, optimizers, lr, length=True):
         """Trains one epoch of length prior."""
         for i, idx in enumerate(self.loader):
+            if len(idx) == 1:
+                continue
             obs = self.dataset['observations'][idx][:, 0, :]
             obs = torch.from_numpy(obs).to(self.device)
             prior_loss = self.skill_prior_loss(idx, obs, params, i)

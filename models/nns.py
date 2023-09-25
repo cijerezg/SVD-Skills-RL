@@ -387,7 +387,7 @@ class Critic(nn.Module):
         qvalue = self.latent_policy(x)
 
         qvalue = self.latent_policy2(qvalue)
-        qvalue = F.relu(self.post_pol(qvalue))
-        qvalue = self.out(qvalue)
+        features = F.relu(self.post_pol(qvalue))
+        qvalue = self.out(features)
 
-        return qvalue
+        return qvalue, features
