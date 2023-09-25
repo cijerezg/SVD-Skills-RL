@@ -124,8 +124,8 @@ def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
     with wandb.init(project=f'SVD-{ENV_NAME}-{offline}', config=config,
-                    notes='SVD training.',
-                    name='Test'):
+                    notes='SVD training. Run 25 episodes before training.',
+                    name='SERENE'):
 
         config = wandb.config
 
