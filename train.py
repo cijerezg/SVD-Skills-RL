@@ -102,7 +102,7 @@ config = {
     'singular_val_k': 1,
 
     # Algo selection params
-    'SERENE': True if 'SENERE' in EXP_NAME else False ,
+    'SERENE': True if 'SERENE' in EXP_NAME else False ,
     'Replayratio': True if 'Replayratio' in EXP_NAME else False,
     'Underparameter': True if 'Underparameter' in EXP_NAME else False,
     'SPiRL': True if 'SPiRL' in EXP_NAME else False,
@@ -112,7 +112,7 @@ config = {
     # Run params
     'train_offline': False,
     'train_rl': True,
-    'load_offline_models': False,
+    'load_offline_models': True,
     'load_rl_models': False,
 }
 
@@ -123,7 +123,7 @@ config.update(hyperparams_dict)
 def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
-    with wandb.init(project=f'Test-SVD-{ENV_NAME}-{offline}', config=config,
+    with wandb.init(project=f'SVD-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
                     name=EXP_NAME):
 

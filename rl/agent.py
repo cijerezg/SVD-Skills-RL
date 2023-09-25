@@ -239,6 +239,7 @@ class VaLS(hyper_params):
                        })
                                                                  
         ####
+
         target_critic_arg = torch.cat([next_obs, next_z], dim=1)
         critic_arg = torch.cat([obs, z], dim=1)
         
@@ -252,9 +253,9 @@ class VaLS(hyper_params):
         
         if log_data:
             with torch.no_grad():
-                dist1 = self.distance_to_params(params, params, 'Critic1', 'Target_critic1')
+                dist1 = self.distance_to_params(params, params, 'Critic', 'Target_critic')
 
-            bellman_terms = self.log_scatter_3d(q, q_target.unsqueeze(dim=1), rew, cum_reward,
+            bellman_terms = self.log_scatter_3d(q, q_target, rew, cum_reward,
                                                 'Q val', 'Q target', 'Reward', 'Cum reward')
             
             wandb.log({'Critic/Distance critic to target 1': dist1,
@@ -282,7 +283,7 @@ class VaLS(hyper_params):
         
         if log_data:
             wandb.log(
-                {'Critic/Critic1 Grad Norm': self.get_gradient(critic_loss, params, 'Critic')})
+                {'Critic/Critic Grad Norm': self.get_gradient(critic_loss, params, 'Critic')})
         
         z_sample, pdf, mu, std = self.eval_skill_policy(obs, params)
 
@@ -295,7 +296,7 @@ class VaLS(hyper_params):
         alpha_skill = torch.exp(self.log_alpha_skill).detach()
         skill_prior_loss = alpha_skill * skill_prior
 
-        q_pi = q_pi * weights
+        q_pi = q_pi.squeeze() * weights
         
         q_val_policy = -torch.mean(q_pi)
         skill_policy_loss = q_val_policy + skill_prior_loss
@@ -312,7 +313,7 @@ class VaLS(hyper_params):
         if log_data:
             with torch.no_grad():
                 mu_diff_as = F.l1_loss(mu, z, reduction='none').mean(1)
-
+            
             pi_reward = self.log_scatter_3d(q_pi.reshape(-1, 1), rew, mu_diff_as.unsqueeze(dim=1), cum_reward,
                                             'Q pi', 'Reward', 'Diff mu pi and z', 'Cum reward')
                 
