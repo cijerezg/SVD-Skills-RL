@@ -106,7 +106,7 @@ class VaLS(hyper_params):
                     
                     if self.Replayratio:
                         params, optimizers = reset_params(params, keys, optimizers, self.learning_rate)
-                    elif self.SVD:
+                    elif self.SERENE:
                         params, optimizers = self.rescale_singular_vals(params, keys, optimizers, self.learning_rate)
                         self.singular_val_k = self.sing_val_factor * self.singular_val_k
                         
@@ -234,7 +234,6 @@ class VaLS(hyper_params):
             wandb.log({'Critic/Mean diff dist rand': wandb.Histogram(mean_diff_rand.cpu()),
                        'Critic/Mean diff average rand': mean_diff_rand.mean().cpu(),
                        'Policy/Eval policy critic_random': eval_test_ave,
-                       'Gradient updates': self.gradient_steps,
                        'Reward batch': wandb.Histogram(rew.cpu())
                        })
                                                                  

@@ -29,7 +29,6 @@ class Sampler(hyper_params):
         self.eval_decoder = eval_decoder
 
         self.env = gym.make(self.env_id)
-
         
     def skill_execution(self, actions, frames=None):
         obs_trj, rew_trj, done_trj = [], [], []

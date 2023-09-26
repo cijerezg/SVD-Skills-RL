@@ -35,7 +35,7 @@ KITCHEN = 'kitchen-mixed-v0'
 RELOCATE = 'relocate-expert-v1'
 PEN = 'pen-cloned-v1'
 
-ENV_NAME = RELOCATE
+ENV_NAME = ANT
 EXP_NAME = 'SERENE'
 
 PARENT_FOLDER = f'checkpoints/{ENV_NAME}'        
