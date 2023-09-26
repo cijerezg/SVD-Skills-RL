@@ -35,8 +35,8 @@ KITCHEN = 'kitchen-mixed-v0'
 RELOCATE = 'relocate-expert-v1'
 PEN = 'pen-cloned-v1'
 
-ENV_NAME = ANT
-EXP_NAME = 'SERENE'
+ENV_NAME = PEN
+EXP_NAME = 'SERENE-1'
 
 PARENT_FOLDER = f'checkpoints/{ENV_NAME}'        
 CASE_FOLDER = 'Baseline'
@@ -70,7 +70,7 @@ elif 'kitchen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(8e4) + 1,
                          'buffer_size': int(8e4) + 1,
                          'reset_frequency': 10000,
-                         'skill_length': 20,
+                         'skill_length': 10,
                          'delta_skill': 32,
                          'test_freq': 80000}
     

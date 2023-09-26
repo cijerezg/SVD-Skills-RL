@@ -29,6 +29,11 @@ class Sampler(hyper_params):
         self.eval_decoder = eval_decoder
 
         self.env = gym.make(self.env_id)
+
+        if 'relocate' in self.env_id:
+            self.env._max_episode_steps = 40
+        elif 'pen' in self.env_id:
+            self.env._max_episode_steps = 40
         
     def skill_execution(self, actions, frames=None):
         obs_trj, rew_trj, done_trj = [], [], []
