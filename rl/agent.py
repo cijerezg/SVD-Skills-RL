@@ -98,8 +98,6 @@ class VaLS(hyper_params):
                 if self.iterations % self.reset_frequency == 0:
                     if self.SERENE:
                         self.reset_frequency = 2 * self.reset_frequency
-                    self.gradient_steps = math.ceil(self.gradient_steps / 2)
-                    self.gradient_steps = np.maximum(4, self.gradient_steps)
                     self.interval_iteration = 0
                     keys = ['SkillPolicy', 'Critic']
                     ref_params = copy.deepcopy(params)
