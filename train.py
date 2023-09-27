@@ -35,8 +35,8 @@ KITCHEN = 'kitchen-mixed-v0'
 RELOCATE = 'relocate-expert-v1'
 PEN = 'pen-cloned-v1'
 
-ENV_NAME = PEN
-EXP_NAME = 'SPiRL-4'
+ENV_NAME = KITCHEN
+EXP_NAME = 'SERENE'
 
 PARENT_FOLDER = f'checkpoints/{ENV_NAME}'        
 CASE_FOLDER = 'Baseline'
@@ -59,8 +59,8 @@ elif 'relocate' in ENV_NAME:
                          'test_freq': int(40000)}
 
 elif 'pen' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(8e4) + 1,
-                         'buffer_size': int(8e4) + 1,
+    hyperparams_dict  = {'max_iterations': int(4e4) + 1,
+                         'buffer_size': int(4e4) + 1,
                          'reset_frequency': 5000,
                          'skill_length': 10,
                          'delta_skill': 32,
@@ -98,7 +98,7 @@ config = {
     'learning_rate': 3e-4,
     'discount': 0.97,
     'sing_val_factor': 2, 
-    'gradient_steps': 16,
+    'gradient_steps': 4,
     'singular_val_k': 1,
 
     # Algo selection params
@@ -123,7 +123,7 @@ config.update(hyperparams_dict)
 def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
-    with wandb.init(project=f'SVD-{ENV_NAME}-{offline}', config=config,
+    with wandb.init(project=f'V1-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
                     name=EXP_NAME):
 
