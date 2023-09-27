@@ -336,8 +336,6 @@ class SkillPolicy(nn.Module):
 
         latent_policy = create_mlp(128, -1, net_arch=net_arch, use_batch_norm=False)
         self.latent_policy = nn.Sequential(*latent_policy)
-        latent_policy2 = create_mlp(128, -1, net_arch=net_arch, use_batch_norm=False)
-        self.latent_policy2 = nn.Sequential(*latent_policy2)
 
         self.mu = nn.Linear(net_arch[-1], latent_dim)
         self.log_std = nn.Linear(net_arch[-1], latent_dim)
@@ -348,9 +346,7 @@ class SkillPolicy(nn.Module):
     def forward(self, data):
         x = self.embed_obs(data[:, 0:self.input_obs])
         policy_latent = self.latent_policy(x)
-                
-        policy_latent = self.latent_policy2(policy_latent)
-        
+                        
         mu = self.mu(policy_latent)
 
         log_std = self.log_std(policy_latent)
@@ -371,8 +367,7 @@ class Critic(nn.Module):
         
         self.latent_policy = create_mlp(128, -1, net_arch=net_arch)
         self.latent_policy = nn.Sequential(*self.latent_policy)
-        self.latent_policy2 = create_mlp(256, -1, net_arch=net_arch)
-        self.latent_policy2 = nn.Sequential(*self.latent_policy2)
+
         self.out = nn.Linear(32, 1)
         self.obs_dim = obs_dim
         self.z_dim = z_dim
@@ -386,7 +381,6 @@ class Critic(nn.Module):
 
         qvalue = self.latent_policy(x)
 
-        qvalue = self.latent_policy2(qvalue)
         features = F.relu(self.post_pol(qvalue))
         qvalue = self.out(features)
 

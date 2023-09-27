@@ -30,37 +30,6 @@ class Sampler(hyper_params):
 
         self.env = gym.make(self.env_id)
 
-        if 'relocate' in self.env_id:
-            self.env._max_episode_steps = 40
-        elif 'pen' in self.env_id:
-            self.env._max_episode_steps = 40
-        
-    def skill_execution(self, actions, frames=None):
-        obs_trj, rew_trj, done_trj = [], [], []
-        aux_frames = []
-        
-        for i in range(actions.shape[0]):
-            next_obs, rew, done, info = self.env.step(actions[i, :])
-            if frames is not None:
-                if self.env_key != 'kitchen':
-                    frame = self.env.sim.render(width=WIDTH, height=HEIGHT,
-                                                mode='offscreen',
-                                                camera_name='vil_camera')
-                    aux_frames.append(frame)
-                else:
-                    frame = self.env.sim.render(width=WIDTH, height=HEIGHT)
-                    aux_frames.append(frame)
-                    
-            if self.env_key != 'kitchen':
-                done = info['goal_achieved'] if len(info) == 1 else True
-            obs_trj.append(next_obs)
-            rew_trj.append(rew)
-            done_trj.append(done)
-        if frames is not None:
-            frames.append(aux_frames)
-
-        return obs_trj, rew_trj, done_trj, frames
-
     def skill_step(self, params, obs, frames=None):
         obs_t = torch.from_numpy(obs).to(self.device).to(torch.float32)
         obs_t = obs_t.reshape(1, -1)

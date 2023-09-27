@@ -36,7 +36,7 @@ RELOCATE = 'relocate-expert-v1'
 PEN = 'pen-cloned-v1'
 
 ENV_NAME = PEN
-EXP_NAME = 'SERENE-1'
+EXP_NAME = 'SPiRL-4'
 
 PARENT_FOLDER = f'checkpoints/{ENV_NAME}'        
 CASE_FOLDER = 'Baseline'
