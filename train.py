@@ -36,7 +36,7 @@ RELOCATE = 'relocate-expert-v1'
 PEN = 'pen-cloned-v1'
 
 ENV_NAME = KITCHEN
-EXP_NAME = 'SERENE'
+EXP_NAME = 'SERENE-3'
 
 PARENT_FOLDER = f'checkpoints/{ENV_NAME}'        
 CASE_FOLDER = 'Baseline'
@@ -45,7 +45,7 @@ CASE_FOLDER = 'Baseline'
 if 'ant' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(1.6e5) + 1,
                          'buffer_size': int(1.6e5) + 1,
-                         'reset_frequency': 20000,
+                         'reset_frequency': 20000 if 'SERENE' in EXP_NAME else 40000,
                          'skill_length': 40,
                          'delta_skill': 12,
                          'test_freq': 40000}
@@ -53,7 +53,7 @@ if 'ant' in ENV_NAME:
 elif 'relocate' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(4e4) + 1,
                          'buffer_size': int(4e4) + 1,
-                         'reset_frequency': 5000,
+                         'reset_frequency': 5000 if 'SERENE' in EXP_NAME else 10000,
                          'skill_length': 10,
                          'delta_skill': 32,
                          'test_freq': int(40000)}
@@ -61,7 +61,7 @@ elif 'relocate' in ENV_NAME:
 elif 'pen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(4e4) + 1,
                          'buffer_size': int(4e4) + 1,
-                         'reset_frequency': 5000,
+                         'reset_frequency': 5000 if 'SERENE' else 10000,
                          'skill_length': 10,
                          'delta_skill': 32,
                          'test_freq': 50000}
@@ -69,8 +69,8 @@ elif 'pen' in ENV_NAME:
 elif 'kitchen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(8e4) + 1,
                          'buffer_size': int(8e4) + 1,
-                         'reset_frequency': 10000,
-                         'skill_length': 10,
+                         'reset_frequency': 10000 if 'SERENE' else 20000,
+                         'skill_length': 20,
                          'delta_skill': 32,
                          'test_freq': 80000}
     
