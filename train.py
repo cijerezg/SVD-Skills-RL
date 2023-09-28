@@ -36,7 +36,7 @@ RELOCATE = 'relocate-expert-v1'
 PEN = 'pen-cloned-v1'
 
 ENV_NAME = PEN
-EXP_NAME = 'SERENE'
+EXP_NAME = 'Layernorm'
 
 PARENT_FOLDER = f'checkpoints/{ENV_NAME}'        
 CASE_FOLDER = 'Baseline'
@@ -106,6 +106,7 @@ config = {
     'Replayratio': True if 'Replayratio' in EXP_NAME else False,
     'Underparameter': True if 'Underparameter' in EXP_NAME else False,
     'SPiRL': True if 'SPiRL' in EXP_NAME else False,
+    'Layernorm': True if 'Layernorm' in EXP_NAME else False,
 
     'folder_sing_vals': EXP_NAME,
     
@@ -138,7 +139,8 @@ def main(config=None):
         skill_policy = SkillPolicy(hives.state_dim, hives.action_range,
                                    latent_dim=hives.z_skill_dim).to(hives.device)
 
-        critic = Critic(hives.state_dim, hives.z_skill_dim).to(hives.device)
+        critic = Critic(hives.state_dim, hives.z_skill_dim,
+                        layer_norm=config.Layernorm).to(hives.device)
         
         sampler = Sampler(skill_policy, hives.models['Decoder'], hives.evaluate_decoder, config)
 

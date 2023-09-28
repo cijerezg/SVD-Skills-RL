@@ -360,7 +360,7 @@ class SkillPolicy(nn.Module):
     
 
 class Critic(nn.Module):
-    def __init__(self, obs_dim, z_dim, net_arch=[256] * 2):
+    def __init__(self, obs_dim, z_dim, net_arch=[256] * 2, layer_norm=False):
         super().__init__()
         self.embed_obs = nn.Linear(obs_dim, 128)
         self.embed_z = nn.Linear(z_dim, 128)
@@ -368,10 +368,16 @@ class Critic(nn.Module):
         self.latent_policy = create_mlp(128, -1, net_arch=net_arch)
         self.latent_policy = nn.Sequential(*self.latent_policy)
 
+        if layer_norm:
+            self.layer_embed = nn.LayerNorm(128)
+            self.layer_latent = nn.LayerNorm(256)
+            self.layer_post_pol = nn.LayerNorm(32)
+
         self.out = nn.Linear(32, 1)
         self.obs_dim = obs_dim
         self.z_dim = z_dim
         self.post_pol = nn.Linear(net_arch[-1], 32)
+        self.layer_norm = layer_norm
         
 
     def forward(self, data):
@@ -379,9 +385,18 @@ class Critic(nn.Module):
         e_z = self.embed_z(data[:, self.obs_dim:self.obs_dim + self.z_dim])
         x = e_obs + e_z
 
+        if self.layer_norm:
+            x = self.layer_embed(x)
         qvalue = self.latent_policy(x)
 
-        features = F.relu(self.post_pol(qvalue))
-        qvalue = self.out(features)
+        if self.layer_norm:
+            qvalue = self.layer_latent(qvalue)
+            
+        features = self.post_pol(qvalue)
+
+        if self.layer_norm:
+            features = self.layer_post_pol(features)
+        
+        qvalue = self.out(F.relu(features))
 
         return qvalue, features

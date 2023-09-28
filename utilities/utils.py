@@ -84,7 +84,10 @@ def params_extraction(models: list,
         if pre_params is None:
             for name, param in model.named_parameters():
                 if len(param.shape) == 1:
-                    init = torch.nn.init.constant_(param, 0.0)
+                    if 'layer' in name and 'weight' in name:
+                        init = torch.nn.init.constant_(param, 1.0)
+                    else:
+                        init = torch.nn.init.constant_(param, 0.0)
                 else:
                     init = torch.nn.init.xavier_normal_(param, gain=gain)
                 par[name] = nn.Parameter(init)
