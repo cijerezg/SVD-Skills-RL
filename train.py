@@ -35,8 +35,14 @@ KITCHEN = 'kitchen-mixed-v0'
 RELOCATE = 'relocate-expert-v1'
 PEN = 'pen-cloned-v1'
 
+SER = 'SERENE'
+SPL = 'SPiRL'
+RER = 'Replayratio'
+UPA = 'Underparameter'
+LNO = 'Layernorm'
+
 ENV_NAME = PEN
-EXP_NAME = 'Replayratio-1'
+EXP_NAME = SER
 
 print(ENV_NAME)
 print(EXP_NAME)
