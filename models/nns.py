@@ -403,6 +403,6 @@ class Critic(nn.Module):
         if self.layer_norm:
             features = self.layer4_norm(features)
 
-        qval = self.out(qval)
+        qval = self.out(features)
 
         return qval, features
