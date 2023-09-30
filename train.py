@@ -42,7 +42,7 @@ UPA = 'Underparameter'
 LNO = 'Layernorm'
 
 ENV_NAME = PEN
-EXP_NAME = SER
+EXP_NAME = RER
 
 print(ENV_NAME)
 print(EXP_NAME)
@@ -54,7 +54,7 @@ CASE_FOLDER = 'Baseline'
 if 'ant' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(8e4) + 1,
                          'buffer_size': int(8e4) + 1,
-                         'reset_frequency': 20000 if 'SERENE' in EXP_NAME else 40000,
+                         'reset_frequency': 20000 if 'SERENE' in EXP_NAME else 20000,
                          'skill_length': 40,
                          'delta_skill': 12,
                          'test_freq': 40000}
