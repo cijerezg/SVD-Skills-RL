@@ -36,15 +36,18 @@ RELOCATE = 'relocate-expert-v1'
 PEN = 'pen-cloned-v1'
 
 ENV_NAME = PEN
-EXP_NAME = 'Layernorm'
+EXP_NAME = 'Replayratio-1'
+
+print(ENV_NAME)
+print(EXP_NAME)
 
 PARENT_FOLDER = f'checkpoints/{ENV_NAME}'        
 CASE_FOLDER = 'Baseline'
 
 
 if 'ant' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(1.6e5) + 1,
-                         'buffer_size': int(1.6e5) + 1,
+    hyperparams_dict  = {'max_iterations': int(8e4) + 1,
+                         'buffer_size': int(8e4) + 1,
                          'reset_frequency': 20000 if 'SERENE' in EXP_NAME else 40000,
                          'skill_length': 40,
                          'delta_skill': 12,
@@ -61,7 +64,7 @@ elif 'relocate' in ENV_NAME:
 elif 'pen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(4e4) + 1,
                          'buffer_size': int(4e4) + 1,
-                         'reset_frequency': 5000 if 'SERENE' else 10000,
+                         'reset_frequency': 5000 if 'SERENE' in EXP_NAME else 10000,
                          'skill_length': 10,
                          'delta_skill': 32,
                          'test_freq': 50000}
@@ -69,7 +72,7 @@ elif 'pen' in ENV_NAME:
 elif 'kitchen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(8e4) + 1,
                          'buffer_size': int(8e4) + 1,
-                         'reset_frequency': 10000 if 'SERENE' else 20000,
+                         'reset_frequency': 10000 if 'SERENE' in EXP_NAME else 20000,
                          'skill_length': 20,
                          'delta_skill': 32,
                          'test_freq': 80000}
@@ -97,7 +100,7 @@ config = {
     'action_range': 4,
     'learning_rate': 3e-4,
     'discount': 0.97,
-    'sing_val_factor': 2, 
+    'sing_val_factor': 1.5, 
     'gradient_steps': 4,
     'singular_val_k': 1,
 
@@ -124,7 +127,7 @@ config.update(hyperparams_dict)
 def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
-    with wandb.init(project=f'V3-{ENV_NAME}-{offline}', config=config,
+    with wandb.init(project=f'TEST-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
                     name=EXP_NAME):
 

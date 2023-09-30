@@ -60,7 +60,7 @@ class VaLS(hyper_params):
         self.total_episode_counter = 0
         self.reward_logger = []
         self.log_data = 0
-        self.log_data_freq = 200
+        self.log_data_freq = self.batch_size
 
         
     def training(self, params, optimizers, path, name):
@@ -145,16 +145,15 @@ class VaLS(hyper_params):
             self.steps_per_episode = 0
             self.total_episode_counter += 1
 
+        self.log_data = (self.log_data + 1) % self.log_data_freq
         log_data = True if self.log_data % self.log_data_freq == 0 else False
-
+        
         if len(self.reward_logger) > 15 and log_data:
             step = self.iterations * self.skill_length
             wandb.log({'Cumulative reward dist': wandb.Histogram(np.array(self.reward_logger))})
             wandb.log({'Average reward over 100 eps': np.mean(self.reward_logger[-100:])}, step=step)
 
-        self.log_data = (self.log_data + 1) % self.log_data_freq
-
-        if self.experience_buffer.size > self.batch_size:
+        if self.experience_buffer.size >= self.batch_size:
             
             for i in range(self.gradient_steps):
                 log_data = log_data if i == 0 else False # Only log data once for multi grad steps.

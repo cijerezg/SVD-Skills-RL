@@ -360,43 +360,49 @@ class SkillPolicy(nn.Module):
     
 
 class Critic(nn.Module):
-    def __init__(self, obs_dim, z_dim, net_arch=[256] * 2, layer_norm=False):
+    def __init__(self, obs_dim, z_dim, layer_norm=False):
         super().__init__()
-        self.embed_obs = nn.Linear(obs_dim, 128)
-        self.embed_z = nn.Linear(z_dim, 128)
+        self.embed = nn.Linear(obs_dim + z_dim, 256)
+
+        self.layer1 = nn.Linear(256, 256)
+        self.layer2 = nn.Linear(256, 256)
+        self.layer3 = nn.Linear(256, 256)
+        self.layer4 = nn.Linear(256, 64)
+        self.out = nn.Linear(64, 1)
         
-        self.latent_policy = create_mlp(128, -1, net_arch=net_arch)
-        self.latent_policy = nn.Sequential(*self.latent_policy)
-
         if layer_norm:
-            self.layer_embed = nn.LayerNorm(128)
-            self.layer_latent = nn.LayerNorm(256)
-            self.layer_post_pol = nn.LayerNorm(32)
+            self.layer_embed = nn.LayerNorm(256)
+            self.layer1_norm = nn.LayerNorm(256)
+            self.layer2_norm = nn.LayerNorm(256)
+            self.layer3_norm = nn.LayerNorm(256)
+            self.layer4_norm = nn.LayerNorm(64)
 
-        self.out = nn.Linear(32, 1)
         self.obs_dim = obs_dim
         self.z_dim = z_dim
-        self.post_pol = nn.Linear(net_arch[-1], 32)
         self.layer_norm = layer_norm
         
-
     def forward(self, data):
-        e_obs = self.embed_obs(data[:, :self.obs_dim])
-        e_z = self.embed_z(data[:, self.obs_dim:self.obs_dim + self.z_dim])
-        x = e_obs + e_z
-
-        if self.layer_norm:
-            x = self.layer_embed(x)
-        qvalue = self.latent_policy(x)
-
-        if self.layer_norm:
-            qvalue = self.layer_latent(qvalue)
-            
-        features = self.post_pol(qvalue)
-
-        if self.layer_norm:
-            features = self.layer_post_pol(features)
+        qval = self.embed(data)
         
-        qvalue = self.out(F.relu(features))
+        if self.layer_norm:
+            qval = self.layer_embed(qval)
 
-        return qvalue, features
+        qval = self.layer1(F.relu(qval))
+        if self.layer_norm:
+            qval = self.layer1_norm(qval)
+
+        qval = self.layer2(F.relu(qval))
+        if self.layer_norm:
+            qval = self.layer2_norm(qval)
+        
+        qval = self.layer3(F.relu(qval))
+        if self.layer_norm:
+            qval = self.layer3_norm(qval)
+
+        features = self.layer4(F.relu(qval))
+        if self.layer_norm:
+            features = self.layer4_norm(features)
+
+        qval = self.out(qval)
+
+        return qval, features
