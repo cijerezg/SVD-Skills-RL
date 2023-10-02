@@ -42,7 +42,7 @@ UPA = 'Underparameter'
 LNO = 'Layernorm'
 
 ENV_NAME = PEN
-EXP_NAME = 'SERENE-norm'
+EXP_NAME = 
 
 print(ENV_NAME)
 print(EXP_NAME)
@@ -148,9 +148,8 @@ def main(config=None):
         skill_policy = SkillPolicy(hives.state_dim, hives.action_range,
                                    latent_dim=hives.z_skill_dim).to(hives.device)
 
-        layer_norm = True if config.Layernorm or config.SERENE else False
         critic = Critic(hives.state_dim, hives.z_skill_dim,
-                        layer_norm=layer_norm).to(hives.device)
+                        layer_norm=config.Layernorm).to(hives.device)
         
         sampler = Sampler(skill_policy, hives.models['Decoder'], hives.evaluate_decoder, config)
 
