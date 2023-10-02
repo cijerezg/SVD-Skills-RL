@@ -42,7 +42,7 @@ UPA = 'Underparameter'
 LNO = 'Layernorm'
 
 ENV_NAME = PEN
-EXP_NAME = SER
+EXP_NAME = 'Replayratio-1'
 
 print(ENV_NAME)
 print(EXP_NAME)
@@ -71,7 +71,7 @@ elif 'pen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(4e4) + 1,
                          'buffer_size': int(4e4) + 1,
                          'reset_frequency': 5000 if 'SERENE' in EXP_NAME else 10000,
-                         'skill_length': 10,
+                         'skill_length': 5,
                          'delta_skill': 32,
                          'test_freq': 50000}
     
@@ -106,7 +106,7 @@ config = {
     'action_range': 4,
     'learning_rate': 3e-4,
     'discount': 0.97,
-    'sing_val_factor': 1.5, 
+    'sing_val_factor': 2, 
     'gradient_steps': 4,
     'singular_val_k': 1,
 
@@ -133,7 +133,7 @@ config.update(hyperparams_dict)
 def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
-    with wandb.init(project=f'V4-{ENV_NAME}-{offline}', config=config,
+    with wandb.init(project=f'V5-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
                     name=EXP_NAME):
 
@@ -148,8 +148,9 @@ def main(config=None):
         skill_policy = SkillPolicy(hives.state_dim, hives.action_range,
                                    latent_dim=hives.z_skill_dim).to(hives.device)
 
+        layer_norm = True if config.Layernorm or config.SERENE else False
         critic = Critic(hives.state_dim, hives.z_skill_dim,
-                        layer_norm=config.Layernorm).to(hives.device)
+                        layer_norm=layer_norm).to(hives.device)
         
         sampler = Sampler(skill_policy, hives.models['Decoder'], hives.evaluate_decoder, config)
 
