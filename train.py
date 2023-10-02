@@ -42,7 +42,7 @@ UPA = 'Underparameter'
 LNO = 'Layernorm'
 
 ENV_NAME = PEN
-EXP_NAME = 
+EXP_NAME = SPL
 
 print(ENV_NAME)
 print(EXP_NAME)

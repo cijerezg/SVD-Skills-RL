@@ -367,7 +367,6 @@ class Critic(nn.Module):
         self.layer1 = nn.Linear(256, 256)
         self.layer2 = nn.Linear(256, 256)
         self.layer3 = nn.Linear(256, 256)
-        self.layer4 = nn.Linear(256, 64)
         self.out = nn.Linear(64, 1)
         
         if layer_norm:
@@ -375,7 +374,6 @@ class Critic(nn.Module):
             self.layer1_norm = nn.LayerNorm(256)
             self.layer2_norm = nn.LayerNorm(256)
             self.layer3_norm = nn.LayerNorm(256)
-            self.layer4_norm = nn.LayerNorm(64)
 
         self.obs_dim = obs_dim
         self.z_dim = z_dim
@@ -395,13 +393,9 @@ class Critic(nn.Module):
         if self.layer_norm:
             qval = self.layer2_norm(qval)
         
-        qval = self.layer3(F.relu(qval))
+        features = self.layer3(F.relu(qval))
         if self.layer_norm:
-            qval = self.layer3_norm(qval)
-
-        features = self.layer4(F.relu(qval))
-        if self.layer_norm:
-            features = self.layer4_norm(features)
+            features = self.layer3_norm(features)
 
         qval = self.out(features)
 
