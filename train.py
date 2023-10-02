@@ -42,7 +42,7 @@ UPA = 'Underparameter'
 LNO = 'Layernorm'
 
 ENV_NAME = PEN
-EXP_NAME = 'Replayratio-1'
+EXP_NAME = 'SERENE-norm'
 
 print(ENV_NAME)
 print(EXP_NAME)
@@ -52,33 +52,33 @@ CASE_FOLDER = 'Baseline'
 
 
 if 'ant' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(8e4) + 1,
-                         'buffer_size': int(8e4) + 1,
-                         'reset_frequency': 20000 if 'SERENE' in EXP_NAME else 20000,
+    hyperparams_dict  = {'max_iterations': int(6.4e4) + 1,
+                         'buffer_size': int(6.4e4) + 1,
+                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
                          'skill_length': 40,
                          'delta_skill': 12,
                          'test_freq': 40000}
 
 elif 'relocate' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(4e4) + 1,
-                         'buffer_size': int(4e4) + 1,
-                         'reset_frequency': 5000 if 'SERENE' in EXP_NAME else 10000,
+    hyperparams_dict  = {'max_iterations': int(3.2e4) + 1,
+                         'buffer_size': int(3.2e4) + 1,
+                         'reset_frequency': 500 if 'SERENE' in EXP_NAME else 8000,
                          'skill_length': 10,
                          'delta_skill': 32,
                          'test_freq': int(40000)}
 
 elif 'pen' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(4e4) + 1,
-                         'buffer_size': int(4e4) + 1,
-                         'reset_frequency': 5000 if 'SERENE' in EXP_NAME else 10000,
+    hyperparams_dict  = {'max_iterations': int(3.2e4) + 1,
+                         'buffer_size': int(3.2e4) + 1,
+                         'reset_frequency': 500 if 'SERENE' in EXP_NAME else 8000,
                          'skill_length': 5,
                          'delta_skill': 32,
                          'test_freq': 50000}
     
 elif 'kitchen' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(8e4) + 1,
-                         'buffer_size': int(8e4) + 1,
-                         'reset_frequency': 10000 if 'SERENE' in EXP_NAME else 20000,
+    hyperparams_dict  = {'max_iterations': int(6.4e4) + 1,
+                         'buffer_size': int(6.4e4) + 1,
+                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
                          'skill_length': 20,
                          'delta_skill': 32,
                          'test_freq': 80000}
@@ -133,7 +133,7 @@ config.update(hyperparams_dict)
 def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
-    with wandb.init(project=f'V5-{ENV_NAME}-{offline}', config=config,
+    with wandb.init(project=f'Test-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
                     name=EXP_NAME):
 

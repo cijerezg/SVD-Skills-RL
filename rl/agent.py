@@ -60,7 +60,7 @@ class VaLS(hyper_params):
         self.total_episode_counter = 0
         self.reward_logger = []
         self.log_data = 0
-        self.log_data_freq = self.batch_size
+        self.log_data_freq = self.max_iterations // 256
 
         
     def training(self, params, optimizers, path, name):
@@ -97,7 +97,7 @@ class VaLS(hyper_params):
             if self.SERENE or self.Replayratio:
                 if self.iterations % self.reset_frequency == 0:
                     if self.SERENE:
-                        self.reset_frequency = 2 * self.reset_frequency
+                        self.reset_frequency = 4 * self.reset_frequency
                     self.interval_iteration = 0
                     keys = ['SkillPolicy', 'Critic']
                     ref_params = copy.deepcopy(params)
@@ -145,16 +145,20 @@ class VaLS(hyper_params):
             self.steps_per_episode = 0
             self.total_episode_counter += 1
 
-        self.log_data = (self.log_data + 1) % self.log_data_freq
         log_data = True if self.log_data % self.log_data_freq == 0 else False
+        self.log_data = (self.log_data + 1) % self.log_data_freq
+
         
         if len(self.reward_logger) > 15 and log_data:
             step = self.iterations * self.skill_length
             wandb.log({'Cumulative reward dist': wandb.Histogram(np.array(self.reward_logger))})
-            wandb.log({'Average reward over 100 eps': np.mean(self.reward_logger[-100:])}, step=step)
+            wandb.log({'Train average reward over 100 eps': np.mean(self.reward_logger[-100:])}, step=step)
 
-        if self.experience_buffer.size >= self.batch_size:
+        if log_data:
+            test_reward = self.testing(params)
+            wandb.log({'Test average reward': test_reward})            
             
+        if self.experience_buffer.size >= self.batch_size:
             for i in range(self.gradient_steps):
                 log_data = log_data if i == 0 else False # Only log data once for multi grad steps.
                 policy_losses, critic_loss = self.losses(params, log_data, ref_params)
@@ -453,75 +457,22 @@ class VaLS(hyper_params):
             target_vec1 = nn.utils.parameters_to_vector(params2[name2].values())
         return torch.norm(vec1 - target_vec1)
 
-    def percentile_hist(self, x):
-        x = x.detach().cpu().numpy()
-        x = np.minimum(x, 2)
-
-        return x              
-
     def testing(self, params):
         done = False
         obs = None
 
         rewards = []
-        episodes_w_reward = 0
-        test_episodes = 500
-        length_samples = []
-        length_over_time = []
+        test_episodes = 20
 
-        
         for j in range(test_episodes):
             self.sampler.env.reset()
-            check_episode = True
-            step = 0
+
             while not done:
-                _, data = self.sampler.skill_iteration(params,
-                                                       done,
-                                                       obs)
+                _, data = self.sampler.skill_iteration(params, done, obs)
+                obs, reward, _, _, done = data
 
-                obs, reward, _, _, l_samp, _, done, _, _ = data
-
-                if step < 64:
-                    length_over_time.append(['0-63', l_samp[0]])
-                elif step < 128:
-                    length_over_time.append(['64-127', l_samp[0]])
-                elif step < 196:
-                    length_over_time.append(['128-195', l_samp[0]])
-                elif step < 257:
-                    length_over_time.append(['196-255', l_samp[0]])
-
-                length_samples.append(l_samp[0])
-                step += self.level_lengths[l_samp[0]]
-                if check_episode and reward > 0.0:
-                    episodes_w_reward += 1
-                    check_episode = False
-                
                 rewards.append(reward)
 
-            done = False
-
-        pdb.set_trace()
-        print(np.unique(length_samples, return_counts=True))
-        evol_lengths = np.array(length_over_time)        
-        df = pd.DataFrame(evol_lengths, columns=['Step', 'Length'])
-        df.to_csv('runs/case0.csv', index=False)
         average_reward = sum(rewards) / test_episodes
+
         return average_reward
-
-    def render_results(self, params, foldername):
-        test_episodes = 10
-        
-        for j in range(test_episodes):
-            done = False
-            obs = None
-
-            frames = []
-            self.sampler.env.reset()
-
-            while not done:
-                obs, done, frames = self.sampler.skill_iteration_with_frames(params,
-                                                                             done=done,
-                                                                             obs=obs,
-                                                                             frames=frames)
-
-            process_frames(frames, self.env_id, f'{foldername}/test_{j}')

@@ -30,7 +30,7 @@ class Sampler(hyper_params):
 
         self.env = gym.make(self.env_id)
 
-    def skill_step(self, params, obs, frames=None):
+    def skill_step(self, params, obs):
         obs_t = torch.from_numpy(obs).to(self.device).to(torch.float32)
         obs_t = obs_t.reshape(1, -1)
         obs_trj, rew_trj, done_trj = [], [], []
@@ -60,12 +60,6 @@ class Sampler(hyper_params):
                 done_trj.append(done)
                 if done:                    
                     break
-            # distance = np.linalg.norm(self.env.get_xy() - self.env.target_goal)
-            # print(info)
-            # print(distance)
-        if frames is not None:
-            done = True if sum(done_trj) > 0 else False
-            return obs_trj[-1], done, frames
 
         next_obs_t = torch.from_numpy(obs_trj[-1]).to(self.device).to(torch.float32)
         next_obs_t = next_obs_t.reshape(1, -1)
@@ -90,14 +84,6 @@ class Sampler(hyper_params):
 
         return obs, self.skill_step(params, obs)
 
-    def skill_iteration_with_frames(self, params, done=False, obs=None, frames=None):
-        if done or obs is None:
-            obs = self.env.reset()
-
-        frames = self.skill_step(params, obs, frames)
-
-        return frames
-    
        
 class ReplayBuffer(hyper_params):
     def __init__(self, size, env, lat_dim, reset_ratio, args):
