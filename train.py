@@ -153,11 +153,14 @@ def main(config=None):
         
         sampler = Sampler(skill_policy, hives.models['Decoder'], hives.evaluate_decoder, config)
 
+        test_sampler = Sampler(skill_policy, hives.models['Decoder'], hives.evaluate_decoder, config)
+
         experience_buffer = ReplayBuffer(hives.buffer_size, sampler.env,
                                          hives.z_skill_dim, config.reset_frequency,
                                          config)
 
         vals = VaLS(sampler,
+                    test_sampler,
                     experience_buffer,
                     hives,
                     skill_policy,

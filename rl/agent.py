@@ -36,6 +36,7 @@ INIT_LOG_ALPHA = 0
 class VaLS(hyper_params):
     def __init__(self,
                  sampler,
+                 test_sampler,
                  experience_buffer,
                  vae,
                  skill_policy,
@@ -45,6 +46,7 @@ class VaLS(hyper_params):
         super().__init__(args)
 
         self.sampler = sampler
+        self.test_sampler = test_sampler
         self.critic = critic
         self.skill_policy = skill_policy
         self.vae = vae
@@ -60,7 +62,8 @@ class VaLS(hyper_params):
         self.total_episode_counter = 0
         self.reward_logger = []
         self.log_data = 0
-        self.log_data_freq = self.max_iterations // 256
+        POINTS = 128
+        self.log_data_freq = self.max_iterations // POINTS
 
         
     def training(self, params, optimizers, path, name):
@@ -148,15 +151,14 @@ class VaLS(hyper_params):
         log_data = True if self.log_data % self.log_data_freq == 0 else False
         self.log_data = (self.log_data + 1) % self.log_data_freq
 
-        
         if len(self.reward_logger) > 15 and log_data:
-            step = self.iterations * self.skill_length
             wandb.log({'Cumulative reward dist': wandb.Histogram(np.array(self.reward_logger))})
-            wandb.log({'Train average reward over 100 eps': np.mean(self.reward_logger[-100:])}, step=step)
+            wandb.log({'Train average reward over 100 eps': np.mean(self.reward_logger[-100:])})
 
         if log_data:
+            step = self.iterations * self.skill_length
             test_reward = self.testing(params)
-            wandb.log({'Test average reward': test_reward})            
+            wandb.log({'Test average reward': test_reward}, step=step)            
             
         if self.experience_buffer.size >= self.batch_size:
             for i in range(self.gradient_steps):
@@ -462,16 +464,15 @@ class VaLS(hyper_params):
         obs = None
 
         rewards = []
-        test_episodes = 20
+        test_episodes = 40
 
         for j in range(test_episodes):
-            self.sampler.env.reset()
-
+            self.test_sampler.env.reset()
             while not done:
-                _, data = self.sampler.skill_iteration(params, done, obs)
-                obs, reward, _, _, done = data
-
+                _, data = self.test_sampler.skill_iteration(params, done, obs)
+                obs, reward, _, __, done = data                
                 rewards.append(reward)
+            done = False
 
         average_reward = sum(rewards) / test_episodes
 

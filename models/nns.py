@@ -367,7 +367,7 @@ class Critic(nn.Module):
         self.layer1 = nn.Linear(256, 256)
         self.layer2 = nn.Linear(256, 256)
         self.layer3 = nn.Linear(256, 256)
-        self.out = nn.Linear(64, 1)
+        self.out = nn.Linear(256, 1)
         
         if layer_norm:
             self.layer_embed = nn.LayerNorm(256)
