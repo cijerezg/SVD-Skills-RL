@@ -41,7 +41,7 @@ RER = 'Replayratio'
 UPA = 'Underparameter'
 LNO = 'Layernorm'
 
-ENV_NAME = KITCHEN
+ENV_NAME = PEN
 EXP_NAME = LNO
 
 print(ENV_NAME)
@@ -123,7 +123,7 @@ config = {
     'train_offline': False,
     'train_rl': True,
     'load_offline_models': True,
-    'load_rl_models': True,
+    'load_rl_models': False,
 }
 
 
@@ -133,7 +133,7 @@ config.update(hyperparams_dict)
 def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
-    with wandb.init(project=f'V10-{ENV_NAME}-{offline}', config=config,
+    with wandb.init(project=f'Test-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
                     name=EXP_NAME):
 

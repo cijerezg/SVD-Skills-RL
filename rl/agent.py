@@ -64,6 +64,7 @@ class VaLS(hyper_params):
         self.log_data = 0
         POINTS = 128
         self.log_data_freq = self.max_iterations // POINTS
+        self.folder_to_save_svd = None
 
         
     def training(self, params, optimizers, path, name):
@@ -193,16 +194,19 @@ class VaLS(hyper_params):
         norm_cum_reward = torch.from_numpy(batch.norm_cum_reward).to(self.device)
 
         if log_data:
-            singular_vals = self.compute_singular_vals(params)
+            pdb.set_trace()
+            svd = self.compute_singular_svd(params)
             if self.folder_sing_vals is not None:
-                dt_string = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
-                path = f'results/{self.env_key}/{self.folder_sing_vals}/{self.iterations * self.skill_length}'
+                if self.folder_to_save_svd is None:
+                    self.folder_to_save_svd = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+                    
+                path = f'results/{self.env_key}/{self.folder_sing_vals}/{self.folder_to_save_svd}'
                 if not os.path.exists(path):
                     os.makedirs(path)
-                np.save(f'{path}/{dt_string}.npy', singular_vals, allow_pickle=True)
+                np.save(f'{path}/{self.iterations * self.skill_length}.npy', svd, allow_pickle=True)
 
-            for log_name, log_val in singular_vals.items():
-                wandb.log({log_name: wandb.Histogram(log_val)})
+            for log_name, log_val in svd.items():
+                wandb.log({log_name: wandb.Histogram(log_val['S'])})
                         
             # # Critic analysis
             critic_test_arg = torch.cat([obs, z], dim=1)
@@ -264,7 +268,7 @@ class VaLS(hyper_params):
                        'Critic/Bellman terms': bellman_terms})
 
         q_target = rew + (self.discount * q_target).reshape(-1, 1) * (1 - dones)
-        q_target = torch.clamp(q_target, min=-100, max=100)
+        q_target = torch.clamp(q_target, min=-250, max=250)
 
         critic_loss = F.mse_loss(q.squeeze(), q_target.squeeze(),
                                  reduction='none')
@@ -405,21 +409,22 @@ class VaLS(hyper_params):
 
         return fig_scatter
 
-    def compute_singular_vals(self, params):
+    def compute_singular_svd(self, params):
         models = ['Critic', 'SkillPolicy']
         nicknames = ['Critic', 'Policy']
 
-        singular_vals = {}
+        svd = {}
         
         with torch.no_grad():
             for name, mods in zip(nicknames, models):
                 for key, param in params[mods].items():
                     if len(param.shape) < 2:
                         continue
-                    S = torch.linalg.svdvals(param)
-                    singular_vals[f'{name}/{key} - singular vals'] = S.cpu()
+                    U, S, Vh = torch.linalg.svd(param)
+                    svd_dict = {'U': U.cpu(), 'S': S.cpu(), 'Vh': Vh.cpu()}
+                    svd[f'{name}/{key}-svd'] = svd_dict
 
-        return singular_vals
+        return svd
 
     def rescale_singular_vals(self, params, keys, optimizers, lr):
         k = self.singular_val_k
@@ -464,7 +469,7 @@ class VaLS(hyper_params):
         obs = None
 
         rewards = []
-        test_episodes = 40
+        test_episodes = 100
 
         for j in range(test_episodes):
             self.test_sampler.env.reset()
