@@ -13,7 +13,13 @@ import torch
 import numpy as np
 import copy
 import pickle
+import argparse
 
+parser = argparse.ArgumentParser()
+
+parser.add_argument('--run', type=str)
+
+args = parser.parse_args()
 
 
 # When using kitchen, remember in D4RL the tasks are open microwave,
@@ -41,8 +47,8 @@ RER = 'Replayratio'
 UPA = 'Underparameter'
 LNO = 'Layernorm'
 
-ENV_NAME = ANT
-EXP_NAME = LNO
+ENV_NAME = PEN
+EXP_NAME = SPL
 
 print(ENV_NAME)
 print(EXP_NAME)
@@ -109,6 +115,7 @@ config = {
     'sing_val_factor': 2, 
     'gradient_steps': 4,
     'singular_val_k': 1,
+    'run': args.run,
 
     # Algo selection params
     'SERENE': True if 'SERENE' in EXP_NAME else False ,
@@ -135,7 +142,7 @@ def main(config=None):
     offline = 'Offline' if config['train_offline'] else 'Online'
     with wandb.init(project=f'V11-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
-                    name=EXP_NAME):
+                    name=f'{EXP_NAME}-run-{args.run}'):
 
         config = wandb.config
 
@@ -153,7 +160,8 @@ def main(config=None):
         
         sampler = Sampler(skill_policy, hives.models['Decoder'], hives.evaluate_decoder, config)
 
-        test_sampler = Sampler(skill_policy, hives.models['Decoder'], hives.evaluate_decoder, config)
+        test_sampler = Sampler(skill_policy, hives.models['Decoder'], hives.evaluate_decoder, config,
+                               test=True)
 
         experience_buffer = ReplayBuffer(hives.buffer_size, sampler.env,
                                          hives.z_skill_dim, config.reset_frequency,
@@ -187,8 +195,6 @@ def main(config=None):
         pretrained_params.extend([None] * (len(names) - len(pretrained_params)))
         
         params = params_extraction(models, names, pretrained_params)
-
-        pdb.set_trace()       
             
         keys_optims = ['VAE_skills']
         keys_optims.extend(['SkillPrior', 'SkillPolicy'])

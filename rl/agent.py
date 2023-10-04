@@ -64,7 +64,7 @@ class VaLS(hyper_params):
         self.log_data = 0
         POINTS = 128
         self.log_data_freq = self.max_iterations // POINTS
-        self.folder_to_save_svd = None
+        self.folder_svd = None
 
         
     def training(self, params, optimizers, path, name):
@@ -194,13 +194,12 @@ class VaLS(hyper_params):
         norm_cum_reward = torch.from_numpy(batch.norm_cum_reward).to(self.device)
 
         if log_data:
-            pdb.set_trace()
             svd = self.compute_singular_svd(params)
             if self.folder_sing_vals is not None:
-                if self.folder_to_save_svd is None:
-                    self.folder_to_save_svd = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+                if self.folder_svd is None:
+                    self.folder_svd = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
                     
-                path = f'results/{self.env_key}/{self.folder_sing_vals}/{self.folder_to_save_svd}'
+                path = f'results/{self.env_key}/{self.folder_sing_vals}/{self.folder_svd}-run-{self.run}'
                 if not os.path.exists(path):
                     os.makedirs(path)
                 np.save(f'{path}/{self.iterations * self.skill_length}.npy', svd, allow_pickle=True)

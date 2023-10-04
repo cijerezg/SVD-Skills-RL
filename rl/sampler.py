@@ -21,7 +21,7 @@ HEIGHT = 4 * 480
 
 
 class Sampler(hyper_params):
-    def __init__(self, skill_policy, decoder, eval_decoder, args):
+    def __init__(self, skill_policy, decoder, eval_decoder, args, test=False):
         super().__init__(args)
 
         self.skill_policy = skill_policy
@@ -29,6 +29,7 @@ class Sampler(hyper_params):
         self.eval_decoder = eval_decoder
 
         self.env = gym.make(self.env_id)
+        self.test = test
 
     def skill_step(self, params, obs):
         obs_t = torch.from_numpy(obs).to(self.device).to(torch.float32)
@@ -36,9 +37,12 @@ class Sampler(hyper_params):
         obs_trj, rew_trj, done_trj = [], [], []
 
         with torch.no_grad():
-            z_sample, _, _, _ = functional_call(self.skill_policy,
-                                                params['SkillPolicy'],
-                                                obs_t)
+            z_sample, _, mu, _ = functional_call(self.skill_policy,
+                                                 params['SkillPolicy'],
+                                                 obs_t)
+
+            if self.test:
+                z_sample = mu # Use deterministic policy
 
             self.decoder.reset_hidden_state(z_sample)
             self.decoder.func_embed_z(z_sample)
