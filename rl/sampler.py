@@ -30,6 +30,7 @@ class Sampler(hyper_params):
 
         self.env = gym.make(self.env_id)
         self.test = test
+        
 
     def skill_step(self, params, obs):
         obs_t = torch.from_numpy(obs).to(self.device).to(torch.float32)
@@ -42,7 +43,7 @@ class Sampler(hyper_params):
                                                  obs_t)
 
             if self.test:
-                z_sample = mu # Use deterministic policy
+                z_sample = mu
 
             self.decoder.reset_hidden_state(z_sample)
             self.decoder.func_embed_z(z_sample)

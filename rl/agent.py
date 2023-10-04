@@ -471,12 +471,12 @@ class VaLS(hyper_params):
         test_episodes = 100
 
         for j in range(test_episodes):
-            self.test_sampler.env.reset()
             while not done:
                 _, data = self.test_sampler.skill_iteration(params, done, obs)
                 obs, reward, _, __, done = data                
                 rewards.append(reward)
             done = False
+            obs = None
 
         average_reward = sum(rewards) / test_episodes
 
