@@ -74,11 +74,8 @@ def params_extraction(models: list,
         par = {}
         gain = 1.0
 
-        if name_m == 'Target_critic1':
-            params[name_m] = copy.deepcopy(params['Critic1'])
-            continue
-        if name_m == 'Target_critic2':
-            params[name_m] = copy.deepcopy(params['Critic2'])
+        if name_m == 'Target_critic':
+            params[name_m] = copy.deepcopy(params['Critic'])
             continue
 
         if pre_params is None:
@@ -129,10 +126,8 @@ def load_pretrained_models(args, filename):
     if args.load_rl_models:
         print('RL models were loaded.')
         pretrained_params.append(params['SkillPolicy'])
-        pretrained_params.append(params['Critic1'])
-        pretrained_params.append(params['Target_critic1'])
-        pretrained_params.append(params['Critic2'])
-        pretrained_params.append(params['Target_critic2'])
+        pretrained_params.append(params['Critic'])
+        pretrained_params.append(params['Target_critic'])
         
     return pretrained_params
 

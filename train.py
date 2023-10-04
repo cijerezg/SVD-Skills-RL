@@ -41,7 +41,7 @@ RER = 'Replayratio'
 UPA = 'Underparameter'
 LNO = 'Layernorm'
 
-ENV_NAME = PEN
+ENV_NAME = ANT
 EXP_NAME = LNO
 
 print(ENV_NAME)
@@ -123,7 +123,7 @@ config = {
     'train_offline': False,
     'train_rl': True,
     'load_offline_models': True,
-    'load_rl_models': False,
+    'load_rl_models': True,
 }
 
 
@@ -133,7 +133,7 @@ config.update(hyperparams_dict)
 def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
-    with wandb.init(project=f'Test-{ENV_NAME}-{offline}', config=config,
+    with wandb.init(project=f'V11-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
                     name=EXP_NAME):
 
@@ -187,6 +187,8 @@ def main(config=None):
         pretrained_params.extend([None] * (len(names) - len(pretrained_params)))
         
         params = params_extraction(models, names, pretrained_params)
+
+        pdb.set_trace()       
             
         keys_optims = ['VAE_skills']
         keys_optims.extend(['SkillPrior', 'SkillPolicy'])
