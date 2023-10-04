@@ -41,8 +41,8 @@ RER = 'Replayratio'
 UPA = 'Underparameter'
 LNO = 'Layernorm'
 
-ENV_NAME = PEN
-EXP_NAME = SPL
+ENV_NAME = KITCHEN
+EXP_NAME = LNO
 
 print(ENV_NAME)
 print(EXP_NAME)
@@ -123,7 +123,7 @@ config = {
     'train_offline': False,
     'train_rl': True,
     'load_offline_models': True,
-    'load_rl_models': False,
+    'load_rl_models': True,
 }
 
 
