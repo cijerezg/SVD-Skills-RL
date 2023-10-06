@@ -158,8 +158,8 @@ class VaLS(hyper_params):
 
         if log_data:
             step = self.iterations * self.skill_length
-            test_reward = self.testing(params)
-            wandb.log({'Test average reward': test_reward}, step=step)            
+            self.test_reward = self.testing(params)
+            wandb.log({'Test average reward': self.test_reward}, step=step)            
             
         if self.experience_buffer.size >= self.batch_size:
             for i in range(self.gradient_steps):
@@ -195,14 +195,12 @@ class VaLS(hyper_params):
 
         if log_data:
             svd = self.compute_singular_svd(params)
-            if self.folder_sing_vals is not None:
-                if self.folder_svd is None:
-                    self.folder_svd = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
-                    
-                path = f'results/{self.env_key}/{self.folder_sing_vals}/{self.folder_svd}-run-{self.run}'
-                if not os.path.exists(path):
-                    os.makedirs(path)
-                np.save(f'{path}/{self.iterations * self.skill_length}.npy', svd, allow_pickle=True)
+            svd['test reward'] = self.test_reward
+            svd['train reward'] = np.mean(self.reward_logger[-100:])
+            path = f'results/{self.env_key}/{self.folder_sing_vals}/{self.folder_svd}-run-{self.run}'
+            if not os.path.exists(path):
+                os.makedirs(path)
+            np.save(f'{path}/{self.iterations * self.skill_length}.npy', svd, allow_pickle=True)
 
             for log_name, log_val in svd.items():
                 wandb.log({log_name: wandb.Histogram(log_val['S'])})
