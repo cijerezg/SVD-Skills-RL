@@ -63,7 +63,7 @@ class VaLS(hyper_params):
         self.reward_logger = []
         self.log_data = 0
         POINTS = 128
-        self.log_data_freq = self.max_iterations // POINTS
+        self.log_data_freq = (self.max_iterations + 1) // POINTS
         self.folder_svd = None
 
         
