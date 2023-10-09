@@ -21,6 +21,7 @@ parser.add_argument('--run', type=str)
 
 args = parser.parse_args()
 
+# np.seterr(all='raise')
 
 # When using kitchen, remember in D4RL the tasks are open microwave,
 # move kettle, flip light switch, and open (slide) cabinet.
@@ -43,12 +44,12 @@ PEN = 'pen-cloned-v1'
 
 SER = 'SERENE'
 SPL = 'SPiRL'
-RER = 'Replayratio'
+RER = 'Replayratio-v1'
 UPA = 'Underparameter'
 LNO = 'Layernorm'
 
 ENV_NAME = PEN
-EXP_NAME = SPL
+EXP_NAME = RER
 
 print(ENV_NAME)
 print(EXP_NAME)
@@ -58,32 +59,32 @@ CASE_FOLDER = 'Baseline'
 
 
 if 'ant' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(6.4e4) + 1,
-                         'buffer_size': int(6.4e4) + 1,
+    hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
+                         'buffer_size': int(6.4e4) - 1,
                          'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
                          'skill_length': 40,
                          'delta_skill': 12,
                          'test_freq': 40000}
 
 elif 'relocate' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(6.4e4) + 1,
-                         'buffer_size': int(6.4e4) + 1,
+    hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
+                         'buffer_size': int(6.4e4) - 1,
                          'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
                          'skill_length': 10,
-                         'delta_skill': 32,
+                         'delta_skill': 48,
                          'test_freq': int(40000)}
 
 elif 'pen' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(6.4e4) + 1,
-                         'buffer_size': int(6.4e4) + 1,
+    hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
+                         'buffer_size': int(6.4e4) - 1,
                          'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
                          'skill_length': 5,
                          'delta_skill': 32,
                          'test_freq': 50000}
     
 elif 'kitchen' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(6.4e4) + 1,
-                         'buffer_size': int(6.4e4) + 1,
+    hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
+                         'buffer_size': int(6.4e4) - 1,
                          'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
                          'skill_length': 20,
                          'delta_skill': 32,
@@ -113,7 +114,7 @@ config = {
     'learning_rate': 3e-4,
     'discount': 0.97,
     'sing_val_factor': 2, 
-    'gradient_steps': 4,
+    'gradient_steps': 16,
     'singular_val_k': 1,
     'run': args.run,
 

@@ -108,8 +108,10 @@ class VaLS(hyper_params):
                     
                     if self.Replayratio:
                         params, optimizers = reset_params(params, keys, optimizers, self.learning_rate)
+                        params['Target_critic'] = copy.deepcopy(params['Critic'])
                     elif self.SERENE:
                         params, optimizers = self.rescale_singular_vals(params, keys, optimizers, self.learning_rate)
+                        params['Target_critic'] = copy.deepcopy(params['Critic'])                        
                         self.singular_val_k = self.sing_val_factor * self.singular_val_k
                         
                     self.log_alpha_skill = torch.tensor(INIT_LOG_ALPHA, dtype=torch.float32,
@@ -153,18 +155,21 @@ class VaLS(hyper_params):
         self.log_data = (self.log_data + 1) % self.log_data_freq
 
         if len(self.reward_logger) > 15 and log_data:
+            step = self.iterations * self.skill_length
             wandb.log({'Cumulative reward dist': wandb.Histogram(np.array(self.reward_logger))})
-            wandb.log({'Train average reward over 100 eps': np.mean(self.reward_logger[-100:])})
+            wandb.log({'Average reward over 100 eps': np.mean(self.reward_logger[-100:])}, step=step)
 
         if log_data:
             step = self.iterations * self.skill_length
             self.test_reward = self.testing(params)
             wandb.log({'Test average reward': self.test_reward}, step=step)            
             
-        if self.experience_buffer.size >= self.batch_size:
+        if self.experience_buffer.size >= self.batch_size or log_data:
             for i in range(self.gradient_steps):
                 log_data = log_data if i == 0 else False # Only log data once for multi grad steps.
                 policy_losses, critic_loss = self.losses(params, log_data, ref_params)
+                if self.experience_buffer.size < self.batch_size:
+                    continue
                 losses = [*policy_losses, critic_loss]
                 names = ['SkillPolicy', 'Critic']
                 params = Adam_update(params, losses, names, optimizers, lr)
@@ -195,16 +200,15 @@ class VaLS(hyper_params):
 
         if log_data:
             svd = self.compute_singular_svd(params)
-            svd['test reward'] = self.test_reward
-            svd['train reward'] = np.mean(self.reward_logger[-100:])
-            path = f'results/{self.env_key}/{self.folder_sing_vals}/{self.folder_svd}-run-{self.run}'
+            for log_name, log_val in svd.items():
+                wandb.log({log_name: wandb.Histogram(log_val['S'])})
+
+            svd['reward'] = self.test_reward
+            path = f'results/{self.env_key}/{self.folder_sing_vals}/run-{self.run}'
             if not os.path.exists(path):
                 os.makedirs(path)
             np.save(f'{path}/{self.iterations * self.skill_length}.npy', svd, allow_pickle=True)
 
-            for log_name, log_val in svd.items():
-                wandb.log({log_name: wandb.Histogram(log_val['S'])})
-                        
             # # Critic analysis
             critic_test_arg = torch.cat([obs, z], dim=1)
 
