@@ -42,11 +42,11 @@ KITCHEN = 'kitchen-mixed-v0'
 RELOCATE = 'relocate-expert-v1'
 PEN = 'pen-cloned-v1'
 
-SER = 'SERENE'
-SPL = 'SPiRL'
-RER = 'Replayratio-v1'
-UPA = 'Underparameter'
-LNO = 'Layernorm'
+SER = 'SERENE-v10'
+SPL = 'SPiRL-v10'
+RER = 'Replayratio-v10'
+UPA = 'Underparameter-v10'
+LNO = 'Layernorm-v10'
 
 ENV_NAME = PEN
 EXP_NAME = RER
@@ -114,7 +114,7 @@ config = {
     'learning_rate': 3e-4,
     'discount': 0.97,
     'sing_val_factor': 2, 
-    'gradient_steps': 1,
+    'gradient_steps': 4,
     'singular_val_k': 1,
     'run': args.run,
 
@@ -141,7 +141,7 @@ config.update(hyperparams_dict)
 def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
-    with wandb.init(project=f'V13-{ENV_NAME}-{offline}', config=config,
+    with wandb.init(project=f'V14-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
                     name=f'{EXP_NAME}-run-{args.run}'):
 
