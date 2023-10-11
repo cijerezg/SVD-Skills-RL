@@ -333,7 +333,8 @@ class VaLS(hyper_params):
                  'Policy/Mean STD': std.mean().detach().cpu(),
                  'Policy/Mu dist': wandb.Histogram(mu.detach().cpu()),
                  'Policy/Pi reward': pi_reward,
-                 })
+                 'Policy/Skill Prior grad': self.get_gradient(skill_prior_loss, params, 'SkillPolicy'),
+                 'Policy/Q function grad': self.get_gradient(q_val_policy, params, 'SkillPolicy')})
 
             wandb.log(
                 {'Priors/Alpha skill': alpha_skill.detach().cpu(),

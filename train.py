@@ -59,33 +59,33 @@ CASE_FOLDER = 'Baseline'
 
 
 if 'ant' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
-                         'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
+    hyperparams_dict  = {'max_iterations': int(3.2e4) - 1,
+                         'buffer_size': int(3.2e4) - 1,
+                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 8000,
                          'skill_length': 40,
                          'delta_skill': 12,
                          'test_freq': 40000}
 
 elif 'relocate' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
-                         'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
+    hyperparams_dict  = {'max_iterations': int(3.2e4) - 1,
+                         'buffer_size': int(3.2e4) - 1,
+                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 8000,
                          'skill_length': 10,
                          'delta_skill': 48,
                          'test_freq': int(40000)}
 
 elif 'pen' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
-                         'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
+    hyperparams_dict  = {'max_iterations': int(3.2e4) - 1,
+                         'buffer_size': int(3.2e4) - 1,
+                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 8000,
                          'skill_length': 5,
                          'delta_skill': 32,
                          'test_freq': 50000}
     
 elif 'kitchen' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
-                         'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
+    hyperparams_dict  = {'max_iterations': int(3.2e4) - 1,
+                         'buffer_size': int(3.2e4) - 1,
+                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 8000,
                          'skill_length': 20,
                          'delta_skill': 32,
                          'test_freq': 80000}
@@ -114,7 +114,7 @@ config = {
     'learning_rate': 3e-4,
     'discount': 0.97,
     'sing_val_factor': 2, 
-    'gradient_steps': 4,
+    'gradient_steps': 16,
     'singular_val_k': 1,
     'run': args.run,
 
@@ -141,7 +141,7 @@ config.update(hyperparams_dict)
 def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
-    with wandb.init(project=f'V14-{ENV_NAME}-{offline}', config=config,
+    with wandb.init(project=f'Test-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
                     name=f'{EXP_NAME}-run-{args.run}'):
 
@@ -161,8 +161,7 @@ def main(config=None):
         
         sampler = Sampler(skill_policy, hives.models['Decoder'], hives.evaluate_decoder, config)
 
-        test_sampler = Sampler(skill_policy, hives.models['Decoder'], hives.evaluate_decoder, config,
-                               test=True)
+        test_sampler = Sampler(skill_policy, hives.models['Decoder'], hives.evaluate_decoder, config)
 
         experience_buffer = ReplayBuffer(hives.buffer_size, sampler.env,
                                          hives.z_skill_dim, config.reset_frequency,

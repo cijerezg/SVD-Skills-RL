@@ -182,7 +182,7 @@ class SVD_analysis:
         data = pd.DataFrame.from_dict(self.reward_dict[env])
         data.columns = ['Reward'] * data.shape[1]
         data.index = data.index / 1e5
-        sns.lineplot(data=data, ax=ax)
+        sns.lineplot(data=data, ax=ax, errorbar='se')
         ax.get_legend().remove()
 
     def axis_adjust(self, ax, title=None, yaxis='Test'):
@@ -493,7 +493,7 @@ class SVD_analysis:
         
             
 PATH = 'results'
-EXPERIMENT = 'Replayratio'
+EXPERIMENT = 'Replayratio-v10'
 
 analysis = SVD_analysis(PATH, EXPERIMENT)
 
