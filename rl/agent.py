@@ -30,7 +30,7 @@ import plotly.graph_objects as go
 import math
 
 
-MAX_SKILL_KL = 50
+MAX_SKILL_KL = 100
 INIT_LOG_ALPHA = 0
 
 class VaLS(hyper_params):
