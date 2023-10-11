@@ -42,11 +42,11 @@ KITCHEN = 'kitchen-mixed-v0'
 RELOCATE = 'relocate-expert-v1'
 PEN = 'pen-cloned-v1'
 
-SER = 'SERENE-v10'
-SPL = 'SPiRL-v10'
-RER = 'Replayratio-v10'
-UPA = 'Underparameter-v10'
-LNO = 'Layernorm-v10'
+SER = 'SERENE-v15'
+SPL = 'SPiRL-v15'
+RER = 'Replayratio-v15'
+UPA = 'Underparameter-v15'
+LNO = 'Layernorm-v15'
 
 ENV_NAME = PEN
 EXP_NAME = RER
