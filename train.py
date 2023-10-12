@@ -18,6 +18,7 @@ import argparse
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--run', type=str)
+parser.add_argument('--algo', type=str)
 
 args = parser.parse_args()
 
@@ -49,7 +50,7 @@ UPA = 'Underparameter-v16'
 LNO = 'Layernorm-v16'
 
 ENV_NAME = KITCHEN
-EXP_NAME = RER
+EXP_NAME = args.algo
 
 print(ENV_NAME)
 print(EXP_NAME)
@@ -141,7 +142,7 @@ config.update(hyperparams_dict)
 def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
-    with wandb.init(project=f'V16-{ENV_NAME}-{offline}', config=config,
+    with wandb.init(project=f'Test-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
                     name=f'{EXP_NAME}-run-{args.run}'):
 
