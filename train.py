@@ -48,7 +48,7 @@ RER = 'Replayratio-v16'
 UPA = 'Underparameter-v16'
 LNO = 'Layernorm-v16'
 
-ENV_NAME = PEN
+ENV_NAME = KITCHEN
 EXP_NAME = RER
 
 print(ENV_NAME)
@@ -67,9 +67,9 @@ if 'ant' in ENV_NAME:
                          'test_freq': 40000}
 
 elif 'relocate' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
-                         'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
+    hyperparams_dict  = {'max_iterations': int(3.2e4) - 1,
+                         'buffer_size': int(3.2e4) - 1,
+                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 8000,
                          'skill_length': 10,
                          'delta_skill': 32,
                          'test_freq': int(40000)}
