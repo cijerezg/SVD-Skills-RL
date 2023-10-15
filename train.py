@@ -54,7 +54,7 @@ UPA = 'Underparameter-v16'
 LNO = 'Layernorm-v16'
 
 ENV_NAME = RELOCATE
-EXP_NAME = SPL
+EXP_NAME = args.algo
 
 print(ENV_NAME)
 print(EXP_NAME)
@@ -72,9 +72,9 @@ if 'ant' in ENV_NAME:
                          'test_freq': 40000}
 
 elif 'relocate' in ENV_NAME or 'Relocate' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(3.2e4) - 1,
-                         'buffer_size': int(3.2e4) - 1,
-                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 8000,
+    hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
+                         'buffer_size': int(6.4e4) - 1,
+                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
                          'skill_length': 10,
                          'delta_skill': 32,
                          'test_freq': int(40000)}
@@ -135,7 +135,7 @@ config = {
     # Run params
     'train_offline': False,
     'train_rl': True,
-    'load_offline_models': False,
+    'load_offline_models': True,
     'load_rl_models': False,
 }
 
@@ -146,7 +146,7 @@ config.update(hyperparams_dict)
 def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
-    with wandb.init(project=f'Test-{ENV_NAME}-{offline}', config=config,
+    with wandb.init(project=f'V16-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
                     name=f'{EXP_NAME}-run-{args.run}'):
 
