@@ -14,6 +14,7 @@ import numpy as np
 import copy
 import pickle
 import argparse
+import importlib
 
 parser = argparse.ArgumentParser()
 
@@ -24,8 +25,7 @@ args = parser.parse_args()
 
 # np.seterr(all='raise')
 
-# When using kitchen, remember in D4RL the tasks are open microwave,
-# move kettle, flip light switch, and open (slide) cabinet.
+D4RL = importlib.util.find_spec('d4rl') is not None
 
 torch.set_printoptions(sci_mode=False)
 np.set_printoptions(precision=5)
@@ -40,8 +40,12 @@ wandb.login()
 
 ANT = 'antmaze-medium-diverse-v2'
 KITCHEN = 'kitchen-mixed-v0'
-RELOCATE = 'relocate-expert-v1'
-PEN = 'pen-cloned-v1'
+if D4RL:
+    RELOCATE = 'relocate-expert-v1'
+    PEN = 'pen-cloned-v1'
+else:
+    RELOCATE = 'AdroitHandRelocateSparse-v1'
+    PEN = 'AdroitHandPenSparse-v1'
 
 SER = 'SERENE-v16'
 SPL = 'SPiRL-v16'
@@ -49,8 +53,8 @@ RER = 'Replayratio-v16'
 UPA = 'Underparameter-v16'
 LNO = 'Layernorm-v16'
 
-ENV_NAME = KITCHEN
-EXP_NAME = args.algo
+ENV_NAME = RELOCATE
+EXP_NAME = SPL
 
 print(ENV_NAME)
 print(EXP_NAME)
@@ -67,7 +71,7 @@ if 'ant' in ENV_NAME:
                          'delta_skill': 12,
                          'test_freq': 40000}
 
-elif 'relocate' in ENV_NAME:
+elif 'relocate' in ENV_NAME or 'Relocate' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(3.2e4) - 1,
                          'buffer_size': int(3.2e4) - 1,
                          'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 8000,
@@ -75,7 +79,7 @@ elif 'relocate' in ENV_NAME:
                          'delta_skill': 32,
                          'test_freq': int(40000)}
 
-elif 'pen' in ENV_NAME:
+elif 'pen' in ENV_NAME or 'Pen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(3.2e4) - 1,
                          'buffer_size': int(3.2e4) - 1,
                          'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 8000,
@@ -131,7 +135,7 @@ config = {
     # Run params
     'train_offline': False,
     'train_rl': True,
-    'load_offline_models': True,
+    'load_offline_models': False,
     'load_rl_models': False,
 }
 

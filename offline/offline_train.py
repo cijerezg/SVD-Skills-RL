@@ -16,7 +16,10 @@ from utilities.utils import hyper_params, compute_cum_rewards
 from models.nns import SkillPrior, LengthPrior
 from models.nns import Encoder, StateConditionedDecoder
 import wandb
-import gym
+try:
+    import gym
+except ModuleNotFoundError:
+    print('Gym is not installed and dataset cannot be downloaded')
 import pdb
 import matplotlib.pyplot as plt
 import pandas as pd

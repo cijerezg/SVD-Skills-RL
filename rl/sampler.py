@@ -4,17 +4,22 @@ import sys
 sys.path.insert(0, '../')
 
 from utilities.utils import hyper_params, AttrDict, compute_cum_rewards
-#import gymnasium as gym
-import gym
-import d4rl
 import numpy as np
 from torch.func import functional_call
 import torch
 import torch.nn.functional as F
 import wandb
 from scipy import signal
+try:
+    import d4rl
+    import gym
+    D4RL = True
+except ModuleNotFoundError:
+    import gymnasium as gym
+    D4RL = False
 
 import pdb
+
 
 WIDTH = 4 * 640
 HEIGHT = 4 * 480
@@ -47,13 +52,20 @@ class Sampler(hyper_params):
                 action = self.eval_decoder(obs_t, params)
                 action = action.cpu().detach().numpy()
                 action = action.squeeze()
-                obs, rew, done, info = self.env.step(action)
+                if D4RL:
+                    obs, rew, done, info = self.env.step(action)
+                else:
+                    obs, rew, terminated, truncated, info = self.env.step(action)
 
                 # Relocate environment does not use done. It uses info.
                 obs_t = torch.from_numpy(obs).to(self.device).to(torch.float32)
 
                 if 'adroit' in self.env_key:
-                    done = True if done or info['goal_achieved'] else False
+                    if D4RL:
+                        done = True if done or info['goal_achieved'] else False
+                    else:
+                        done = True if terminated or truncated or info['success'] else False
+
                 # Collect trajectories
                 obs_trj.append(obs)
                 rew_trj.append(rew)
@@ -80,7 +92,10 @@ class Sampler(hyper_params):
 
     def skill_iteration(self, params, done=False, obs=None, test=False):
         if done or obs is None:
-            obs = self.env.reset()
+            if D4RL:
+                obs = self.env.reset()
+            else:
+                obs, _ = self.env.reset()
 
         return obs, self.skill_step(params, obs)
 

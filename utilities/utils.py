@@ -2,9 +2,11 @@
 
 import torch
 import torch.nn as nn
-#import gymnasium as gym
-import gym
-import d4rl
+try:
+    import gym
+    import d4rl
+except ModuleNotFoundError:
+    import gymnasium as gym
 from collections import OrderedDict
 import numpy as np
 import os
@@ -26,9 +28,9 @@ class hyper_params:
         
         self.device = torch.device(args.device)
         self.action_dim, self.state_dim = self.env_dims(args.env_id)
-        if 'relocate' in self.env_id:
+        if 'relocate' in self.env_id or 'Relocate' in self.env_id:
             self.env_key = 'adroit_relocate'
-        elif 'pen' in self.env_id:
+        elif 'pen' in self.env_id or 'Pen' in self.env_id:
             self.env_key = 'adroit_pen'
         elif 'kitchen' in self.env_id:
             self.env_key = 'kitchen'
