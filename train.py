@@ -53,7 +53,7 @@ RER = 'Replayratio-v16'
 UPA = 'Underparameter-v16'
 LNO = 'Layernorm-v16'
 
-ENV_NAME = RELOCATE
+ENV_NAME = PEN
 EXP_NAME = args.algo
 
 print(ENV_NAME)
@@ -80,9 +80,9 @@ elif 'relocate' in ENV_NAME or 'Relocate' in ENV_NAME:
                          'test_freq': int(40000)}
 
 elif 'pen' in ENV_NAME or 'Pen' in ENV_NAME:
-    hyperparams_dict  = {'max_iterations': int(3.2e4) - 1,
-                         'buffer_size': int(3.2e4) - 1,
-                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 8000,
+    hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
+                         'buffer_size': int(6.4e4) - 1,
+                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
                          'skill_length': 5,
                          'delta_skill': 32,
                          'test_freq': 50000}

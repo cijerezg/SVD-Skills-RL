@@ -1,5 +1,6 @@
 import subprocess
 import argparse
+import pdb
 
 parser = argparse.ArgumentParser()
 
@@ -9,12 +10,13 @@ args = parser.parse_args()
 
 alg = args.algo
 
+bs = 'python train.py'
+run = lambda x: f'--run {x} --algo {alg}'
 
-ps = f'python train.py --run 5 --algo {alg} & python train.py --run 6 --algo {alg} & python train.py --run 7 --algo {alg} & python train.py --run 8 --algo {alg}'
 
+ps = f'{bs} {run(1)} & {bs} {run(2)} & {bs} {run(3)} & {bs} {run(4)} & {bs} {run(5)} & {bs} {run(6)} & {bs} {run(7)} & {bs} {run(8)}'
 
 subprocess.run(ps, shell=True)
-
 
 
 # Random test
