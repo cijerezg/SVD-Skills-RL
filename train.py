@@ -20,6 +20,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--run', type=str)
 parser.add_argument('--algo', type=str)
+parser.add_argument('--reset_freq', type=int)
 
 args = parser.parse_args()
 
@@ -47,7 +48,7 @@ else:
     RELOCATE = 'AdroitHandRelocateSparse-v1'
     PEN = 'AdroitHandPenSparse-v1'
 
-SER = 'SERENE-v16'
+SER = f'SERENE-v16-Freq-{args.reset_freq}'
 SPL = 'SPiRL-v16'
 RER = 'Replayratio-v16'
 UPA = 'Underparameter-v16'
@@ -82,7 +83,7 @@ elif 'relocate' in ENV_NAME or 'Relocate' in ENV_NAME:
 elif 'pen' in ENV_NAME or 'Pen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
                          'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
+                         'reset_frequency': args.reset_freq if 'SERENE' in EXP_NAME else 16000,
                          'skill_length': 5,
                          'delta_skill': 32,
                          'test_freq': 50000}
@@ -118,7 +119,7 @@ config = {
     'action_range': 4,
     'learning_rate': 3e-4,
     'discount': 0.97,
-    'sing_val_factor': 2, 
+    'sing_val_factor': 1.5, 
     'gradient_steps': 4,
     'singular_val_k': 1,
     'run': args.run,
@@ -148,7 +149,7 @@ def main(config=None):
     offline = 'Offline' if config['train_offline'] else 'Online'
     with wandb.init(project=f'V16-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
-                    name=f'{EXP_NAME}-run-{args.run}'):
+                    name=f'{EXP_NAME}-Freq-{args.reset_freq}-run-{args.run}'):
 
         config = wandb.config
 
