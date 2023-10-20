@@ -55,8 +55,11 @@ UPA = 'Underparameter-v16'
 LNO = 'Layernorm-v16'
 
 ENV_NAME = PEN
-EXP_NAME = args.algo
-
+if 'SERENE' in args.algo:
+    EXP_NAME = f'{args.algo}-Freq-{args.reset_freq}'
+else:
+    EXP_NAME = args.algo
+    
 print(ENV_NAME)
 print(EXP_NAME)
 
@@ -149,7 +152,7 @@ def main(config=None):
     offline = 'Offline' if config['train_offline'] else 'Online'
     with wandb.init(project=f'V16-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
-                    name=f'{EXP_NAME}-Freq-{args.reset_freq}-run-{args.run}'):
+                    name=f'{EXP_NAME}'):  #-run-{args.run}'):
 
         config = wandb.config
 

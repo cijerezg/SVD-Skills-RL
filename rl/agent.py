@@ -100,8 +100,8 @@ class VaLS(hyper_params):
 
             if self.SERENE or self.Replayratio:
                 if self.iterations % self.reset_frequency == 0:
-                    if self.SERENE:
-                        self.reset_frequency = 4 * self.reset_frequency
+                    # if self.SERENE:
+                    #     self.reset_frequency = 4 * self.reset_frequency
                     self.interval_iteration = 0
                     keys = ['SkillPolicy', 'Critic']
                     ref_params = copy.deepcopy(params)
