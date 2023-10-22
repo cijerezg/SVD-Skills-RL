@@ -55,10 +55,7 @@ UPA = 'Underparameter-v16'
 LNO = 'Layernorm-v16'
 
 ENV_NAME = PEN
-if 'SERENE' in args.algo:
-    EXP_NAME = f'{args.algo}-Freq-{args.reset_freq}'
-else:
-    EXP_NAME = args.algo
+EXP_NAME = args.algo
     
 print(ENV_NAME)
 print(EXP_NAME)
@@ -70,7 +67,7 @@ CASE_FOLDER = 'Baseline'
 if 'ant' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
                          'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
+                         'reset_frequency': args.reset_freq,
                          'skill_length': 40,
                          'delta_skill': 12,
                          'test_freq': 40000}
@@ -78,7 +75,7 @@ if 'ant' in ENV_NAME:
 elif 'relocate' in ENV_NAME or 'Relocate' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
                          'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
+                         'reset_frequency': args.reset_freq,
                          'skill_length': 10,
                          'delta_skill': 32,
                          'test_freq': int(40000)}
@@ -86,7 +83,7 @@ elif 'relocate' in ENV_NAME or 'Relocate' in ENV_NAME:
 elif 'pen' in ENV_NAME or 'Pen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
                          'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': args.reset_freq if 'SERENE' in EXP_NAME else 16000,
+                         'reset_frequency': args.reset_freq,
                          'skill_length': 5,
                          'delta_skill': 32,
                          'test_freq': 50000}
@@ -94,7 +91,7 @@ elif 'pen' in ENV_NAME or 'Pen' in ENV_NAME:
 elif 'kitchen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
                          'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': 1000 if 'SERENE' in EXP_NAME else 16000,
+                         'reset_frequency': args.reset_freq,
                          'skill_length': 20,
                          'delta_skill': 32,
                          'test_freq': 80000}

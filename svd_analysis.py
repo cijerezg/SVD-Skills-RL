@@ -148,8 +148,11 @@ class SVD_analysis:
         runs = pd.melt(runs, value_vars=runs.columns, ignore_index=False)
         runs['index'] = runs.index / 1e5
 
+        #runs = runs.reset_index() Comment this in if get index error
+
         sns.lineplot(runs, x='index', y='value', hue='variable', ax=ax,
                      size=3, errorbar='se')
+
         ax.get_legend().remove()
 
     def plot_explicit_eranks(self, eranks, ax):
@@ -493,7 +496,7 @@ class SVD_analysis:
         
             
 PATH = 'results'
-EXPERIMENT = 'Replayratio-v10'
+EXPERIMENT = 'SERENE-v16-Freq-4000'
 
 analysis = SVD_analysis(PATH, EXPERIMENT)
 
