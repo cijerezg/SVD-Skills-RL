@@ -299,8 +299,6 @@ class VaLS(hyper_params):
         q_pi_arg = torch.cat([obs, z_sample], dim=1)
         
         q_pi, _ = self.eval_critic(q_pi_arg, params)
-
-        pdb.set_trace()
         
         skill_prior = torch.clamp(kl_divergence(pdf, z_prior), max=MAX_SKILL_KL).mean()
         
@@ -332,9 +330,10 @@ class VaLS(hyper_params):
                 {'Policy/current_q_values': wandb.Histogram(q_pi.detach().cpu()),
                  'Policy/current_q_values_average': q_pi.detach().mean().cpu(),
                  'Policy/Z abs value mean': z_sample.abs().mean().detach().cpu(),
-                 'Policy/Z std': z_sample.std().detach().cpu(),
+                 'Policy/Z std': z_sample.std(0).mean().detach().cpu(),
                  'Policy/Z distribution': wandb.Histogram(z_sample.detach().cpu()),
                  'Policy/Mean STD': std.mean().detach().cpu(),
+                 'Policy/Standard dev of STD': std.std(0).mean().detach().cpu(),
                  'Policy/Mu dist': wandb.Histogram(mu.detach().cpu()),
                  'Policy/Pi reward': pi_reward,
                  'Policy/Skill Prior grad': self.get_gradient(skill_prior_loss, params, 'SkillPolicy'),

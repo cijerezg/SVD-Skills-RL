@@ -55,7 +55,7 @@ UPA = 'Underparameter-v16'
 LNO = 'Layernorm-v16'
 
 ENV_NAME = PEN
-EXP_NAME = f'Test-{SPL}'
+EXP_NAME = args.algo
     
 print(ENV_NAME)
 print(EXP_NAME)
@@ -85,7 +85,7 @@ elif 'pen' in ENV_NAME or 'Pen' in ENV_NAME:
                          'buffer_size': int(6.4e4) - 1,
                          'reset_frequency': args.reset_freq,
                          'skill_length': 5,
-                         'delta_skill': 32,
+                         'delta_skill': 16,
                          'test_freq': 50000}
     
 elif 'kitchen' in ENV_NAME:
