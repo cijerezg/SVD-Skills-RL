@@ -119,7 +119,7 @@ config = {
     'action_range': 4,
     'learning_rate': 3e-4,
     'discount': 0.97,
-    'sing_val_factor': 1.5, 
+    'sing_val_factor': 2, 
     'gradient_steps': 4,
     'singular_val_k': 1,
     'run': args.run,

@@ -199,10 +199,6 @@ class HIVES(hyper_params):
         env = gym.make(self.env_id)
         data = env.get_dataset()
 
-        if 'relocate' in self.env_id:
-            for val in ['actions', 'observations', 'timeouts']:
-                data[val] = data[val][:20000]
-
         keys = ['actions', 'observations']
         dataset = {}
         self.max_length = self.skill_length
