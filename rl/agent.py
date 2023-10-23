@@ -299,6 +299,8 @@ class VaLS(hyper_params):
         q_pi_arg = torch.cat([obs, z_sample], dim=1)
         
         q_pi, _ = self.eval_critic(q_pi_arg, params)
+
+        pdb.set_trace()
         
         skill_prior = torch.clamp(kl_divergence(pdf, z_prior), max=MAX_SKILL_KL).mean()
         

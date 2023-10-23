@@ -55,7 +55,7 @@ UPA = 'Underparameter-v16'
 LNO = 'Layernorm-v16'
 
 ENV_NAME = PEN
-EXP_NAME = args.algo
+EXP_NAME = f'Test-{SPL}'
     
 print(ENV_NAME)
 print(EXP_NAME)
@@ -134,9 +134,9 @@ config = {
     'folder_sing_vals': EXP_NAME,
     
     # Run params
-    'train_offline': True,
-    'train_rl': False,
-    'load_offline_models': False,
+    'train_offline': False,
+    'train_rl': True,
+    'load_offline_models': True,
     'load_rl_models': False,
 }
 
