@@ -42,13 +42,13 @@ wandb.login()
 ANT = 'antmaze-medium-diverse-v2'
 KITCHEN = 'kitchen-mixed-v0'
 if D4RL:
-    RELOCATE = 'relocate-expert-v1'
+    RELOCATE = 'relocate-cloned-v1'
     PEN = 'pen-cloned-v1'
 else:
     RELOCATE = 'AdroitHandRelocateSparse-v1'
     PEN = 'AdroitHandPenSparse-v1'
 
-SER = f'SERENE-v16-Freq-{args.reset_freq}'
+SER = 'SERENE-v16'
 SPL = 'SPiRL-v16'
 RER = 'Replayratio-v16'
 UPA = 'Underparameter-v16'
@@ -110,8 +110,8 @@ config = {
     'vae_batch_size': 256,
     'vae_lr': 6e-4,
     'priors_lr': 6e-4,
-    'epochs': 501,
-    'beta': 0.01,
+    'epochs': 401,
+    'beta': 0.1,
     'z_skill_dim': 12,
 
     # Online hyperparams  
@@ -134,9 +134,9 @@ config = {
     'folder_sing_vals': EXP_NAME,
     
     # Run params
-    'train_offline': False,
-    'train_rl': True,
-    'load_offline_models': True,
+    'train_offline': True,
+    'train_rl': False,
+    'load_offline_models': False,
     'load_rl_models': False,
 }
 
@@ -147,9 +147,9 @@ config.update(hyperparams_dict)
 def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
-    with wandb.init(project=f'V16-{ENV_NAME}-{offline}', config=config,
+    with wandb.init(project=f'V17-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
-                    name=f'{EXP_NAME}'):  #-run-{args.run}'):
+                    name=f'{EXP_NAME}'):
 
         config = wandb.config
 

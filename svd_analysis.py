@@ -496,7 +496,7 @@ class SVD_analysis:
         
             
 PATH = 'results'
-EXPERIMENT = 'SERENE-v16-Freq-4000'
+EXPERIMENT = 'SERENE-v16-2000'
 
 analysis = SVD_analysis(PATH, EXPERIMENT)
 
