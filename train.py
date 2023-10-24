@@ -60,7 +60,7 @@ EXP_NAME = args.algo
 print(ENV_NAME)
 print(EXP_NAME)
 
-PARENT_FOLDER = f'checkpoints/{ENV_NAME}'        
+PARENT_FOLDER = f'checkpoints/{ENV_NAME}'
 CASE_FOLDER = 'Baseline'
 
 
@@ -147,7 +147,7 @@ config.update(hyperparams_dict)
 def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
-    with wandb.init(project=f'V17-{ENV_NAME}-{offline}', config=config,
+    with wandb.init(project=f'SERENE-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
                     name=f'{EXP_NAME}'):
 

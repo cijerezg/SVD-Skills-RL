@@ -28,7 +28,7 @@ class SVD_analysis:
         self.nn_layers = {'Critic/embed.weight-svd': 'Embedding layer',
                           'Critic/layer1.weight-svd': 'Hidden layer 1',
                           'Critic/layer2.weight-svd': 'Hidden layer 2',
-                          'Critic/layer3.weight-svd': 'Preoutput layer 2'}
+                          'Critic/layer3.weight-svd': 'Preoutput layer'}
         
 
     def load_data(self):
@@ -85,6 +85,7 @@ class SVD_analysis:
                 sing_vecs_explicit = []
 
                 for run in self.data[env][layer]:
+                    pdb.set_trace()
                     implicit, explicit = self.sing_vecs_computation(self.data[env][layer][run][CASE],
                                                                     levels, CASE)
 
@@ -116,7 +117,8 @@ class SVD_analysis:
 
             self.adjust_and_save_plot(fig1, f'{path}/{env}_implicit')
 
-    def sing_vecs_computation(self, vecs, levels, case):        
+    def sing_vecs_computation(self, vecs, levels, case):
+        pdb.set_trace()
         angles = self.delta_theta_sing_vec(vecs, case=case)
         angles = list(angles.values())
         angles = np.stack(angles)
@@ -149,7 +151,6 @@ class SVD_analysis:
         runs['index'] = runs.index / 1e5
 
         #runs = runs.reset_index() Comment this in if get index error
-
         sns.lineplot(runs, x='index', y='value', hue='variable', ax=ax,
                      size=3, errorbar='se')
 
@@ -265,109 +266,6 @@ class SVD_analysis:
             plt.savefig(f'{path}/{env}.png', bbox_inches='tight', dpi=340)
             plt.close()
 
-    def implicit_plots(self):
-        path = f'{self.save_path}/explicit_plots'
-        self.create_folder(path)
-        self.delta = 0.01
-
-        for env in self.data:
-            fig, axes = plt.subplots(3, 1, figsize=(9, 16))
-
-            # Erank vals
-            all_eranks = []
-            all_sing_vecs = []
-            
-            for layer in self.data[env]:
-                eranks = []
-                sing_vecs = []
-                for run in self.data[env][layer]:
-                    df = pd.DataFrame.from_dict(self.data[env][layer][run]['S'], orient='index')
-                    erank = self.compute_erank(df, self.delta)
-                    erank['reward'] = self.reward_dict[env][run]
-                    eranks.append(erank)
-                eranks = pd.concat(eranks, axis=0)
-                all_eranks.append(eranks)
-
-            all_eranks = pd.concat(all_eranks, axis=0)
-
-            # Singular vectors
-            
-
-                
-                
-
-        
-
-                                    
-    def singular_vals(self):
-        """Plot all singular values plots."""
-        self.delta = 0.01
-
-        envs = list(self.data.keys())
-        layers = list(self.data[envs[0]].keys())
-        self.erank_plots()
-
-        for layer in layers:
-            self.plot_sing_vals_distribution(layer)
-
-        name = f'{self.save_path}/singular_vecs'
-        self.create_folder(name)
-
-    def singular_vecs_plot(self, case='Vh'):
-        path = f'{self.save_path}/singular_vecs'
-        self.create_folder(path)
-
-        levels = [3, 30]
-                
-        for env in self.data:
-            fig, axes = plt.subplots(1, 4, figsize=(27, 9))
-            axes = axes.flatten()
-            
-            for layer, ax in zip(self.data[env], axes):
-                if 'Policy' in layer:
-                    continue
-
-                runs = []
-                for run in self.data[env][layer]:
-                    array_dict = self.data[env][layer][run][case]
-                    angles = self.delta_theta_sing_vec(array_dict, case=case)
-                    angles = list(angles.values())
-                    angles = np.stack(angles)
-                    arrays = np.split(angles, levels, axis=1)
-                    arrays = [np.mean(arr, axis=1) for arr in arrays]
-                    arrays = np.vstack(arrays)
-                    arrays = np.transpose(arrays)
-                    index = list(array_dict.keys())
-                    index.sort()
-                    index.pop()
-                    df = pd.DataFrame(arrays, columns=[f'{run} - Top1', f'{run} - Top2', f'{run} - Top3'],
-                                      index=index)
-                    runs.append(df)
-                runs = pd.concat(runs, axis=1)
-                runs = pd.melt(runs, value_vars=runs.columns, ignore_index=False)
-                runs[['run', 'top']] = runs['variable'].str.split(' - ', expand=True)
-                runs.drop(columns=['variable'], inplace=True)
-
-                runs.replace({'run': self.reward_dict[env]}, inplace=True)
-                runs['index'] = runs.index
-                try:
-                    sns.lineplot(runs, x='index', y='value', hue='run', style='top', ax=ax,
-                                 size=2)
-                except ValueError:
-                    pdb.set_trace()
-
-                ax.grid(True)
-                ax.tick_params(axis='both', labelsize=16)
-                ax.set_ylabel('')
-                ax.set_xlabel('')
-                ax.set_title(env, fontsize=18)
-
-            fig.supxlabel('Environment steps (1e5)', fontsize=20,y=0.02)
-            fig.supylabel('Singular values', fontsize=20, x=0.06)
-            plt.subplots_adjust(wspace=0.1, hspace=0.3)
-
-            plt.savefig(f'{path}/{env}.png', bbox_inches='tight', dpi=340)
-            plt.close()
                     
     def delta_theta_sing_vec(self, U, case='U'):
         """Compute angles between consecutive singular vectors"""
@@ -496,7 +394,7 @@ class SVD_analysis:
         
             
 PATH = 'results'
-EXPERIMENT = 'SERENE-v16-2000'
+EXPERIMENT = 'Replayratio-v16'
 
 analysis = SVD_analysis(PATH, EXPERIMENT)
 
