@@ -276,7 +276,7 @@ class VaLS(hyper_params):
         critic_loss = F.mse_loss(q.squeeze(), q_target.squeeze(),
                                  reduction='none')
 
-        if self.SERENE or self.Replayratio:
+        if self.SERENE and 3 < 1: # This is to not run weight for control experiment.
             with torch.no_grad():
                 weights = F.sigmoid(norm_cum_reward).squeeze()
         else:
