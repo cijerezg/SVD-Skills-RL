@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--run', type=str)
 parser.add_argument('--algo', type=str)
-parser.add_argument('--reset_freq', type=int)
+parser.add_argument('--sigma_max', type=float)
 
 args = parser.parse_args()
 
@@ -67,7 +67,7 @@ CASE_FOLDER = 'Baseline'
 if 'ant' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
                          'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': args.reset_freq,
+                         'reset_frequency': 8000,
                          'skill_length': 40,
                          'delta_skill': 12,
                          'test_freq': 40000}
@@ -75,7 +75,7 @@ if 'ant' in ENV_NAME:
 elif 'relocate' in ENV_NAME or 'Relocate' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
                          'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': args.reset_freq,
+                         'reset_frequency': 8000,
                          'skill_length': 10,
                          'delta_skill': 32,
                          'test_freq': int(40000)}
@@ -83,7 +83,7 @@ elif 'relocate' in ENV_NAME or 'Relocate' in ENV_NAME:
 elif 'pen' in ENV_NAME or 'Pen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
                          'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': args.reset_freq,
+                         'reset_frequency': 8000,
                          'skill_length': 5,
                          'delta_skill': 16,
                          'test_freq': 50000}
@@ -91,7 +91,7 @@ elif 'pen' in ENV_NAME or 'Pen' in ENV_NAME:
 elif 'kitchen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
                          'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': args.reset_freq,
+                         'reset_frequency': 8000,
                          'skill_length': 20,
                          'delta_skill': 32,
                          'test_freq': 80000}
@@ -123,6 +123,7 @@ config = {
     'gradient_steps': 4,
     'singular_val_k': 1,
     'run': args.run,
+    'sigma_max': args.sigma_max,
 
     # Algo selection params
     'SERENE': True if 'SERENE' in EXP_NAME else False ,

@@ -68,6 +68,7 @@ class SVD_analysis:
             #     continue
             fig1, axes1 = plt.subplots(3, 1, figsize=(9, 16))
             fig2, axes2 = plt.subplots(5, 2, figsize=(14, 16))
+
             gs = axes2[-1, 0].get_gridspec()
 
             for ax in axes2[-1, :]:
@@ -79,21 +80,36 @@ class SVD_analysis:
             all_sing_vecs = {}
 
             for idx, layer in enumerate(self.data[env]):
+                # fig3, axes3 = plt.subplots(1, 8, figsize=(32, 9))
+                # axes3 = axes3.flatten()
+
                 ax2 = axes2[idx, :]
                 eranks = []
                 sing_vecs_implicit = []
                 sing_vecs_explicit = []
 
+                
                 for run in self.data[env][layer]:
-                    pdb.set_trace()
                     implicit, explicit = self.sing_vecs_computation(self.data[env][layer][run][CASE],
                                                                     levels, CASE)
+
+                    ## Plot singular vectors
+                    # vecs = self.data[env][layer][run][CASE]
+                    # new = 0
+                    # print(layer)
+                    # for i in range(8):
+                    #     image = vecs[new]
+                    #     image = np.sort(image,axis=1)
+                    #     axes3[i].imshow(image, cmap='viridis')                       
+                    #     new = new + 2500 * 16
+
 
                     sing_vecs_implicit.append(implicit)
                     sing_vecs_explicit.append(explicit)
 
                     erank_df = self.compute_erank_array(self.data[env][layer][run]['S'])
                     eranks.append(erank_df)
+                # plt.show()
 
                 self.plot_explicit_sing_vecs(sing_vecs_explicit, ax2[1])
                 self.plot_explicit_eranks(eranks, ax2[0])
@@ -118,7 +134,6 @@ class SVD_analysis:
             self.adjust_and_save_plot(fig1, f'{path}/{env}_implicit')
 
     def sing_vecs_computation(self, vecs, levels, case):
-        pdb.set_trace()
         angles = self.delta_theta_sing_vec(vecs, case=case)
         angles = list(angles.values())
         angles = np.stack(angles)
@@ -222,6 +237,7 @@ class SVD_analysis:
                     # Singular vectors
                     array = self.data[env][layer][run]['Vh']
                     angles = self.delta_theta_sing_vec(array, case='Vh')
+                    pdb.set_trace()
                     angles = np.stack(angles)
                     arrays = np.split(angles, levels, axis=1)
                     arrays = [np.mean(arr, axis=1) for arr in arrays]
@@ -394,7 +410,7 @@ class SVD_analysis:
         
             
 PATH = 'results'
-EXPERIMENT = 'Replayratio-v16'
+EXPERIMENT = 'Replayratio-32'
 
 analysis = SVD_analysis(PATH, EXPERIMENT)
 

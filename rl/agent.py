@@ -100,10 +100,6 @@ class VaLS(hyper_params):
 
             if self.SERENE or self.Replayratio:
                 if self.iterations % self.reset_frequency == 0:
-                    if self.SERENE:
-                         self.reset_frequency = 3 * self.reset_frequency
-                         if self.iterations > 15000:
-                             self.reset_frequency = 100000000
                     self.interval_iteration = 0
                     keys = ['SkillPolicy', 'Critic']
                     ref_params = copy.deepcopy(params)
@@ -276,9 +272,9 @@ class VaLS(hyper_params):
         critic_loss = F.mse_loss(q.squeeze(), q_target.squeeze(),
                                  reduction='none')
 
-        if self.SERENE and 3 < 1: # This is to not run weight for control experiment.
+        if self.SERENE: # This is to not run weight for control experiment.
             with torch.no_grad():
-                weights = F.sigmoid(norm_cum_reward).squeeze()
+                weights = F.sigmoid(self.sigma_max * norm_cum_reward).squeeze()
         else:
             weights = torch.ones_like(critic_loss)
 

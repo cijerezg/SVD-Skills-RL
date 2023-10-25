@@ -1,2 +1,1 @@
-
-python runs.py --algo Replayratio-8 --reset_freq 8000 && python runs.py --algo Replayratio-32 --reset_freq 32000 && python runs.py --algo Replayratio-16 --reset_freq 16000 && python runs.py --algo SERENE-8 --reset_freq 8000 && python runs.py --algo SERENE-32 --reset_freq 32000 && python runs.py --algo SERENE-16 --reset_freq 16000 
+python runs.py --algo SERENE-S-2 --sigma_max 2 && python runs.py --algo SERENE-S-.25 --sigma_max .25 && python runs.py --algo SERENE-S-8 --sigma_max 8
