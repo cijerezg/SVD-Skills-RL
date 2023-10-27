@@ -112,6 +112,9 @@ class VaLS(hyper_params):
                         params['Target_critic'] = copy.deepcopy(params['Critic'])                        
                         self.singular_val_k = self.sing_val_factor * self.singular_val_k
                         
+                        self.experience_buffer.ptr = 100
+                        self.experience_buffer.size = 100
+                        
                     self.log_alpha_skill = torch.tensor(INIT_LOG_ALPHA, dtype=torch.float32,
                                                         requires_grad=True,
                                                         device=self.device)
@@ -138,6 +141,7 @@ class VaLS(hyper_params):
         self.experience_buffer.add(obs, next_obs, z, next_z, rew, done)
 
         if done:
+            print(self.reward_per_episode)
             if self.total_episode_counter > 2:
                 self.experience_buffer.update_tracking_buffers(self.reward_per_episode)
             wandb.log({'Reward per episode': self.reward_per_episode,
@@ -159,8 +163,9 @@ class VaLS(hyper_params):
 
         if log_data:
             step = self.iterations * self.skill_length
-            self.test_reward = self.testing(params)
-            wandb.log({'Test average reward': self.test_reward}, step=step)            
+            self.test_reward = 0
+        #     self.test_reward = self.testing(params)
+        #     wandb.log({'Test average reward': self.test_reward}, step=step)            
             
         if self.experience_buffer.size >= self.batch_size or log_data:
             for i in range(self.gradient_steps):
@@ -470,7 +475,7 @@ class VaLS(hyper_params):
         obs = None
 
         rewards = []
-        test_episodes = 100
+        test_episodes = 2
 
         for j in range(test_episodes):
             while not done:

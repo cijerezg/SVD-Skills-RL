@@ -33,7 +33,7 @@ class Sampler(hyper_params):
         self.decoder = decoder
         self.eval_decoder = eval_decoder
 
-        self.env = gym.make(self.env_id)        
+        self.env = gym.make(self.env_id)
 
     def skill_step(self, params, obs):
         obs_t = torch.from_numpy(obs).to(self.device).to(torch.float32)
@@ -65,6 +65,8 @@ class Sampler(hyper_params):
                         done = True if done or info['goal_achieved'] else False
                     else:
                         done = True if terminated or truncated or info['success'] else False
+                        if info['success']:
+                            print('Success')
 
                 # Collect trajectories
                 obs_trj.append(obs)
