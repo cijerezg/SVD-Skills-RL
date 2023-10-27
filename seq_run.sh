@@ -1,1 +1,1 @@
-python runs.py --algo SERENE-S-1 --sigma_max .0001
+python runs.py --algo SERENE-Info-weights --sigma_max 1

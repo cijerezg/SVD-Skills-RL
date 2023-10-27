@@ -65,8 +65,6 @@ class Sampler(hyper_params):
                         done = True if done or info['goal_achieved'] else False
                     else:
                         done = True if terminated or truncated or info['success'] else False
-                        if info['success']:
-                            print('Success')
 
                 # Collect trajectories
                 obs_trj.append(obs)
