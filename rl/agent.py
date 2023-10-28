@@ -100,8 +100,11 @@ class VaLS(hyper_params):
 
             if self.SERENE or self.Replayratio:
                 if self.iterations % self.reset_frequency == 0:
-                    self.interval_iteration = 0
-                    keys = ['SkillPolicy', 'Critic']
+                    if self.only_critic:
+                        keys = ['Critic']
+                    else:
+                        keys = ['SkillPolicy', 'Critic']
+                        
                     ref_params = copy.deepcopy(params)
                     
                     if self.Replayratio:
@@ -138,6 +141,8 @@ class VaLS(hyper_params):
         self.reward_per_episode += rew
         self.steps_per_episode += 1
 
+        
+        
         self.experience_buffer.add(obs, next_obs, z, next_z, rew, done)
 
         if done:
@@ -162,9 +167,8 @@ class VaLS(hyper_params):
 
         if log_data:
             step = self.iterations * self.skill_length
-            self.test_reward = 0
-        #     self.test_reward = self.testing(params)
-        #     wandb.log({'Test average reward': self.test_reward}, step=step)            
+            self.test_reward = self.testing(params)
+            wandb.log({'Test average reward': self.test_reward}, step=step)            
             
         if self.experience_buffer.size >= self.batch_size or log_data:
             for i in range(self.gradient_steps):
@@ -189,6 +193,9 @@ class VaLS(hyper_params):
         return params, next_obs, done
 
     def losses(self, params, log_data, ref_params):
+        if self.freeze_buffer:
+            self.experience_buffer.size = np.minimum(self.experience_buffer.size, 32000)
+        
         batch = self.experience_buffer.sample(batch_size=self.batch_size)
 
         obs = torch.from_numpy(batch.observations).to(self.device)
@@ -219,7 +226,7 @@ class VaLS(hyper_params):
             new_z = z.reshape(z.shape[0], 1, -1).repeat(1, trials, 1)
             new_z = new_z.reshape(-1, new_z.shape[-1])
             z_rand = torch.rand(new_z.shape).to(self.device)
-            new_z = new_z + torch.randn(new_z.shape).to(self.device) / 5
+            new_z = new_z + torch.randn(new_z.shape).to(self.device) / 4
 
             new_obs = obs.reshape(obs.shape[0], 1, -1).repeat(1, trials, 1)
             new_obs = new_obs.reshape(-1, new_obs.shape[-1])
@@ -236,7 +243,7 @@ class VaLS(hyper_params):
                 q_rand, _ = self.eval_critic(new_critic_arg_rand, params)
                 q_rand = q_rand.reshape(-1, trials, 1)
 
-                mean_diff_rand = q_r - q_rand.mean(1)
+                mean_diff_rand = q_r - q_rep.mean(1)
 
             eval_test_ave = self.log_scatter_3d(q_r, q_rand.mean(1), cum_reward, rew,
                                                 'Q val', 'Q random', 'Cum reward', 'Reward')
@@ -262,16 +269,16 @@ class VaLS(hyper_params):
         
         if log_data:
             with torch.no_grad():
-                dist1 = self.distance_to_params(params, params, 'Critic', 'Target_critic')
+                dist = self.distance_to_params(params, params, 'Critic', 'Target_critic')
 
             bellman_terms = self.log_scatter_3d(q, q_target, rew, cum_reward,
                                                 'Q val', 'Q target', 'Reward', 'Cum reward')
             
-            wandb.log({'Critic/Distance critic to target 1': dist1,
+            wandb.log({'Critic/Distance critic to target': dist,
                        'Critic/Bellman terms': bellman_terms})
 
         q_target = rew + (self.discount * q_target).reshape(-1, 1) * (1 - dones)
-        q_target = torch.clamp(q_target, min=-250, max=250)
+        q_target = torch.clamp(q_target, min=-100, max=100)
 
         critic_loss = F.mse_loss(q.squeeze(), q_target.squeeze(),
                                  reduction='none')
