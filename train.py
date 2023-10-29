@@ -121,11 +121,11 @@ config = {
     'action_range': 4,
     'learning_rate': 3e-4,
     'discount': 0.97,
-    'sing_val_factor': 2, 
+    'sing_val_factor': 1, 
     'gradient_steps': 4,
-    'singular_val_k': 1,
+    'singular_val_k': 10,
     'run': args.run,
-    'sigma_max': args.sigma_max,
+    'sigma_max': args.sigma_max / 1000,
 
     # Algo selection params
     'SERENE': True if 'SERENE' in EXP_NAME else False ,
@@ -134,6 +134,8 @@ config = {
     'SPiRL': True if 'SPiRL' in EXP_NAME else False,
     'Layernorm': True if 'Layernorm' in EXP_NAME else False,
 
+    'only_critic': True if EXP_NAME else False,
+    
     'folder_sing_vals': EXP_NAME,
     
     # Run params

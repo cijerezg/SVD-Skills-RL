@@ -100,8 +100,10 @@ class VaLS(hyper_params):
 
             if self.SERENE or self.Replayratio:
                 if self.iterations % self.reset_frequency == 0:
-                    self.interval_iteration = 0
-                    keys = ['SkillPolicy', 'Critic']
+                    if self.only_critic:
+                        keys = ['Critic']
+                    else:
+                        keys = ['SkillPolicy', 'Critic']
                     ref_params = copy.deepcopy(params)
                     
                     if self.Replayratio:
@@ -112,7 +114,7 @@ class VaLS(hyper_params):
                         params['Target_critic'] = copy.deepcopy(params['Critic'])                        
                         self.singular_val_k = self.sing_val_factor * self.singular_val_k                        
                         
-                    self.log_alpha_skill = torch.tensor(INIT_LOG_ALPHA, dtype=torch.float32,
+                    self.log_alpha_skill = torch.tensor(self.log_alpha_skill.item(), dtype=torch.float32,
                                                         requires_grad=True,
                                                         device=self.device)
                     self.optimizer_alpha_skill = Adam([self.log_alpha_skill], lr=self.learning_rate)
