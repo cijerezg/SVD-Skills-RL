@@ -21,8 +21,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--run', type=str)
 parser.add_argument('--algo', type=str)
 parser.add_argument('--sigma_max', type=float)
-parser.add_argument('--reset_freq', type=int, default=8000)
-parser.add_argument('--grad_steps', type=int, default=4)
 
 
 args = parser.parse_args()
@@ -60,6 +58,7 @@ LNO = 'Layernorm-v16'
 ENV_NAME = PEN
 EXP_NAME = args.algo
 
+
 print(ENV_NAME)
 print(EXP_NAME)
 
@@ -70,7 +69,7 @@ CASE_FOLDER = 'Baseline'
 if 'ant' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
                          'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': args.reset_freq,
+                         'reset_frequency': 8000,
                          'skill_length': 40,
                          'delta_skill': 8,
                          'test_freq': 40000}
@@ -78,7 +77,7 @@ if 'ant' in ENV_NAME:
 elif 'relocate' in ENV_NAME or 'Relocate' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
                          'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': args.reset_freq,
+                         'reset_frequency': 8000,
                          'skill_length': 10,
                          'delta_skill': 32,
                          'test_freq': int(40000)}
@@ -86,7 +85,7 @@ elif 'relocate' in ENV_NAME or 'Relocate' in ENV_NAME:
 elif 'pen' in ENV_NAME or 'Pen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
                          'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': args.reset_freq,
+                         'reset_frequency': 8000,
                          'skill_length': 5,
                          'delta_skill': 16,
                          'test_freq': 50000}
@@ -94,7 +93,7 @@ elif 'pen' in ENV_NAME or 'Pen' in ENV_NAME:
 elif 'kitchen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
                          'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': args.reset_freq,
+                         'reset_frequency': 8000,
                          'skill_length': 20,
                          'delta_skill': 32,
                          'test_freq': 80000}
@@ -123,11 +122,10 @@ config = {
     'learning_rate': 3e-4,
     'discount': 0.97,
     'sing_val_factor': 2, 
-    'gradient_steps': args.grad_steps,#4
+    'gradient_steps': 4,
     'singular_val_k': 1,
     'run': args.run,
-    'sigma_max': 1,#args.sigma_max,
-    
+    'sigma_max': args.sigma_max,
 
     # Algo selection params
     'SERENE': True if 'SERENE' in EXP_NAME else False ,

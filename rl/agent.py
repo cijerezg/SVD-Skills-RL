@@ -115,7 +115,10 @@ class VaLS(hyper_params):
                         params['Target_critic'] = copy.deepcopy(params['Critic'])                        
                         self.singular_val_k = self.sing_val_factor * self.singular_val_k
                         
-                    self.log_alpha_skill = torch.tensor(self.log_alpha_skill.item(), dtype=torch.float32,
+                        self.experience_buffer.ptr = 100
+                        self.experience_buffer.size = 100
+                        
+                    self.log_alpha_skill = torch.tensor(INIT_LOG_ALPHA, dtype=torch.float32,
                                                         requires_grad=True,
                                                         device=self.device)
                     self.optimizer_alpha_skill = Adam([self.log_alpha_skill], lr=self.learning_rate)
@@ -133,12 +136,14 @@ class VaLS(hyper_params):
                
         obs, data = self.sampler.skill_iteration(params, done, obs)
 
-        next_obs, rew, z, next_mu, next_std, done = data
+        next_obs, rew, z, next_z, done = data
 
         self.reward_per_episode += rew
         self.steps_per_episode += 1
 
-        self.experience_buffer.add(obs, next_obs, z, next_mu, next_std, rew, done)
+        
+        
+        self.experience_buffer.add(obs, next_obs, z, next_z, rew, done)
 
         if done:
             if self.total_episode_counter > 2:
@@ -196,9 +201,7 @@ class VaLS(hyper_params):
         obs = torch.from_numpy(batch.observations).to(self.device)
         next_obs = torch.from_numpy(batch.next_observations).to(self.device)
         z = torch.from_numpy(batch.z).to(self.device)
-        #next_z = torch.from_numpy(batch.next_z).to(self.device)
-        next_mu = torch.from_numpy(batch.next_mu).to(self.device)
-        next_std = torch.from_numpy(batch.next_std).to(self.device)
+        next_z = torch.from_numpy(batch.next_z).to(self.device)
         rew = torch.from_numpy(batch.rewards).to(self.device)
         dones = torch.from_numpy(batch.dones).to(self.device)
         cum_reward = torch.from_numpy(batch.cum_reward).to(self.device)
@@ -252,31 +255,15 @@ class VaLS(hyper_params):
                        })
                                                                  
         ####
-        SAMPLES = 64
 
-        with torch.no_grad():
-            rand_v = torch.randn(SAMPLES, next_mu.shape[0], next_mu.shape[1]).to(self.device)
-
-            next_mu = next_mu.reshape(1, next_mu.shape[0], next_mu.shape[1]).repeat(SAMPLES, 1, 1)
-            next_std = next_std.reshape(1, next_std.shape[0], next_std.shape[1]).repeat(SAMPLES, 1, 1)
-            
-            expanded_next_z = next_mu + rand_v * next_std
-            expanded_next_obs = obs.reshape(1, obs.shape[0], obs.shape[1]).repeat(SAMPLES, 1, 1)
-
-            target_critic_exp = torch.cat([expanded_next_obs, expanded_next_z], dim=2)
-            
-        # target_critic_arg = torch.cat([next_obs, next_z], dim=1)
+        target_critic_arg = torch.cat([next_obs, next_z], dim=1)
         critic_arg = torch.cat([obs, z], dim=1)
         
         with torch.no_grad():                                
             z_prior = self.eval_skill_prior(obs, params)
 
-            # q_target, _ = self.eval_critic(target_critic_arg, params,            
-            #                                target_critic=True)
-            q_target, _ = self.eval_critic(target_critic_exp, params,
+            q_target, _ = self.eval_critic(target_critic_arg, params,
                                            target_critic=True)
-
-            q_target = q_target.mean(0)
 
         q, features = self.eval_critic(critic_arg, params)
         
@@ -494,12 +481,12 @@ class VaLS(hyper_params):
         obs = None
 
         rewards = []
-        test_episodes = 100
+        test_episodes = 2
 
         for j in range(test_episodes):
             while not done:
                 _, data = self.test_sampler.skill_iteration(params, done, obs)
-                obs, reward, _, _, _, done = data                
+                obs, reward, _, __, done = data                
                 rewards.append(reward)
             done = False
             obs = None
