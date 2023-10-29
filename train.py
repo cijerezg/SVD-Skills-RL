@@ -43,7 +43,7 @@ wandb.login()
 ANT = 'antmaze-medium-diverse-v2'
 KITCHEN = 'kitchen-mixed-v0'
 if D4RL:
-    RELOCATE = 'relocate-expert-v1'
+    RELOCATE = 'relocate-cloned-v1'
     PEN = 'pen-cloned-v1'
 else:
     RELOCATE = 'AdroitHandRelocateSparse-v1'
@@ -133,9 +133,6 @@ config = {
     'Underparameter': True if 'Underparameter' in EXP_NAME else False,
     'SPiRL': True if 'SPiRL' in EXP_NAME else False,
     'Layernorm': True if 'Layernorm' in EXP_NAME else False,
-
-    'only_critic': True if 'critic' in EXP_NAME else False,
-    'freeze_buffer': True if 'freeze' in EXP_NAME else False,
 
     'folder_sing_vals': EXP_NAME,
     
