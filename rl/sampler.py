@@ -77,18 +77,20 @@ class Sampler(hyper_params):
         next_obs_t = next_obs_t.reshape(1, -1)
 
         with torch.no_grad():
-            next_z_sample, _, _, _ = functional_call(self.skill_policy,
-                                                     params['SkillPolicy'],
-                                                     next_obs_t)
+            _, _, next_mu, next_std = functional_call(self.skill_policy,
+                                                      params['SkillPolicy'],
+                                                      next_obs_t)
            
         next_obs = obs_trj[-1]
         rew = sum(rew_trj)
 
         z = z_sample.cpu().numpy()
-        next_z = next_z_sample.cpu().numpy()
+        next_mu = next_mu.cpu().numpy()
+        next_std = next_std.cpu().numpy()
+        
         done = True if sum(done_trj) > 0 else False
 
-        return next_obs, rew, z, next_z, done
+        return next_obs, rew, z, next_mu, next_std, done
 
     def skill_iteration(self, params, done=False, obs=None, test=False):
         if done or obs is None:
@@ -107,7 +109,9 @@ class ReplayBuffer(hyper_params):
         self.obs_buf = np.zeros((size, *env.observation_space.shape), dtype=np.float32)
         self.next_obs_buf = np.zeros((size, *env.observation_space.shape), dtype=np.float32)
         self.z_buf = np.zeros((size, lat_dim), dtype=np.float32)
-        self.next_z_buf = np.zeros((size, lat_dim), dtype=np.float32)
+        #self.next_z_buf = np.zeros((size, lat_dim), dtype=np.float32)
+        self.next_mu_buf = np.zeros((size, lat_dim), dtype=np.float32)
+        self.next_std_buf = np.zeros((size, lat_dim), dtype=np.float32)        
         self.rew_buf = np.zeros((size, 1), dtype=np.float32)
         self.done_buf = np.zeros((size, 1), dtype=np.float32)
         self.tracker = np.zeros((size,), dtype=bool)
@@ -120,11 +124,13 @@ class ReplayBuffer(hyper_params):
         self.env = env
         self.lat_dim = lat_dim
 
-    def add(self, obs, next_obs, z, next_z, rew, done):
+    def add(self, obs, next_obs, z, next_mu, next_std, rew, done):
         self.obs_buf[self.ptr] = obs
         self.next_obs_buf[self.ptr] = next_obs
         self.z_buf[self.ptr] = z
-        self.next_z_buf[self.ptr] = next_z
+        # self.next_z_buf[self.ptr] = next_z
+        self.next_mu_buf[self.ptr] = next_mu
+        self.next_std_buf[self.ptr] = next_std
         self.rew_buf[self.ptr] = rew
         self.done_buf[self.ptr] = done
         self.tracker[self.ptr] = True
@@ -137,7 +143,9 @@ class ReplayBuffer(hyper_params):
         batch = AttrDict(observations=self.obs_buf[idxs],
                          next_observations=self.next_obs_buf[idxs],
                          z=self.z_buf[idxs],
-                         next_z=self.next_z_buf[idxs],
+                         # next_z=self.next_z_buf[idxs],
+                         next_mu=self.next_mu_buf[idxs],
+                         next_std=self.next_std_buf[idxs],
                          rewards=self.rew_buf[idxs],
                          dones=self.done_buf[idxs],
                          cum_reward=self.cum_reward[idxs],
