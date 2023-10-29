@@ -472,7 +472,7 @@ class VaLS(hyper_params):
         obs = None
 
         rewards = []
-        test_episodes = 2
+        test_episodes = 100
 
         for j in range(test_episodes):
             while not done:
