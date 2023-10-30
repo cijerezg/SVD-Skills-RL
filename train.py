@@ -20,7 +20,9 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--run', type=str)
 parser.add_argument('--algo', type=str)
-parser.add_argument('--sigma_max', type=float)
+parser.add_argument('--sigma_max', type=float, default=1)
+parser.add_argument('--sing_val_scale', type=float, default=2)
+parser.add_argument('--sing_val_init', type=float, default=1)
 
 
 args = parser.parse_args()
@@ -43,7 +45,7 @@ wandb.login()
 ANT = 'antmaze-medium-diverse-v2'
 KITCHEN = 'kitchen-mixed-v0'
 if D4RL:
-    RELOCATE = 'relocate-cloned-v1'
+    RELOCATE = 'relocate-expert-v1'
     PEN = 'pen-cloned-v1'
 else:
     RELOCATE = 'AdroitHandRelocateSparse-v1'
@@ -121,11 +123,11 @@ config = {
     'action_range': 4,
     'learning_rate': 3e-4,
     'discount': 0.97,
-    'sing_val_factor': 1, 
+    'sing_val_factor': args.sing_val_scale, 
     'gradient_steps': 4,
-    'singular_val_k': 10,
+    'singular_val_k': args.sing_val_init,
     'run': args.run,
-    'sigma_max': args.sigma_max / 1000,
+    'sigma_max': args.sigma_max,
 
     # Algo selection params
     'SERENE': True if 'SERENE' in EXP_NAME else False ,
@@ -134,7 +136,7 @@ config = {
     'SPiRL': True if 'SPiRL' in EXP_NAME else False,
     'Layernorm': True if 'Layernorm' in EXP_NAME else False,
 
-    'only_critic': True if EXP_NAME else False,
+    'only_critic': True if 'SERENE' in EXP_NAME else False,
     
     'folder_sing_vals': EXP_NAME,
     
@@ -152,7 +154,7 @@ config.update(hyperparams_dict)
 def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
-    with wandb.init(project=f'SERENE-{ENV_NAME}-{offline}', config=config,
+    with wandb.init(project=f'V1-SERENE-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
                     name=f'{EXP_NAME}'):
 

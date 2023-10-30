@@ -477,7 +477,7 @@ class VaLS(hyper_params):
         for j in range(test_episodes):
             while not done:
                 _, data = self.test_sampler.skill_iteration(params, done, obs)
-                obs, reward, _, __, done = data                
+                obs, reward, _, _, done = data                
                 rewards.append(reward)
             done = False
             obs = None
