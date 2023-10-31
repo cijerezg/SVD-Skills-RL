@@ -410,7 +410,7 @@ class SVD_analysis:
         
             
 PATH = 'results'
-EXPERIMENT = 'Replayratio-32'
+EXPERIMENT = 'Replayratio'
 
 analysis = SVD_analysis(PATH, EXPERIMENT)
 

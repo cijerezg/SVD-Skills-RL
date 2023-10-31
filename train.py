@@ -74,7 +74,7 @@ if 'ant' in ENV_NAME:
                          'reset_frequency': 8000,
                          'skill_length': 40,
                          'delta_skill': 8,
-                         'test_freq': 40000}
+                         'test_freq': int(6.4e4) - 1}
 
 elif 'relocate' in ENV_NAME or 'Relocate' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
@@ -82,7 +82,7 @@ elif 'relocate' in ENV_NAME or 'Relocate' in ENV_NAME:
                          'reset_frequency': 8000,
                          'skill_length': 10,
                          'delta_skill': 32,
-                         'test_freq': int(40000)}
+                         'test_freq': int(6.4e4) - 1}
 
 elif 'pen' in ENV_NAME or 'Pen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
@@ -90,7 +90,7 @@ elif 'pen' in ENV_NAME or 'Pen' in ENV_NAME:
                          'reset_frequency': 8000,
                          'skill_length': 5,
                          'delta_skill': 16,
-                         'test_freq': 50000}
+                         'test_freq': int(6.4e4) - 1}
     
 elif 'kitchen' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
@@ -98,7 +98,7 @@ elif 'kitchen' in ENV_NAME:
                          'reset_frequency': 8000,
                          'skill_length': 20,
                          'delta_skill': 32,
-                         'test_freq': 80000}
+                         'test_freq': int(6.4e4) - 1}
     
 else:
     raise ValueError('This environment is not registered in the code')

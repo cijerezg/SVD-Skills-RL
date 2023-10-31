@@ -274,7 +274,7 @@ class VaLS(hyper_params):
         critic_loss = F.mse_loss(q.squeeze(), q_target.squeeze(),
                                  reduction='none')
 
-        if self.SERENE: # This is to not run weight for control experiment.
+        if self.SERENE and 3 < 1: # This is to not run weight for control experiment.
             with torch.no_grad():
                 weights = F.sigmoid(self.sigma_max * norm_cum_reward).squeeze()
         else:
@@ -289,8 +289,7 @@ class VaLS(hyper_params):
             critic_loss = critic_loss + 0.001 * sing_vals_loss            
         
         if log_data:
-            wandb.log(
-                {'Critic/Critic Grad Norm': self.get_gradient(critic_loss, params, 'Critic')})
+            wandb.log({'Critic/Critic Grad Norm': self.get_gradient(critic_loss, params, 'Critic')})
         
         z_sample, pdf, mu, std = self.eval_skill_policy(obs, params)
 
@@ -455,6 +454,7 @@ class VaLS(hyper_params):
                               allow_unused=True)
 
         grads = [grad for grad in grads if grad is not None]
+        
         try:
             grads_vec = nn.utils.parameters_to_vector(grads)
         except RuntimeError:
