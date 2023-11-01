@@ -1,8 +1,5 @@
-python runs.py --algo SERENE-Continuous-1 --sing_val_scale 1 --sing_val_init 1 --sigma_max 2
-python runs.py --algo SERENE-Continuous-4 --sing_val_scale 1 --sing_val_init 4 --sigma_max 2
-python runs.py --algo SERENE-Continuous-8 --sing_val_scale 1 --sing_val_init 8 --sigma_max 2
-python runs.py --algo SERENE-Continuous-16 --sing_val_scale 1 --sing_val_init 16 --sigma_max 2
-
+python runs.py --algo SERENE-compute --sing_val_scale 1 --sing_val_init 1 --sigma_max 2
+# python runs.py --algo SERENE-Continuous-4 --sing_val_scale 1 --sing_val_init 4 --sigma_max 2
 
 
 # python runs.py --algo Replayratio-16 --sing_val_scale 2 --sing_val_init 1 --sigma_max 2

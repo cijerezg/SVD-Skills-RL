@@ -437,6 +437,9 @@ class VaLS(hyper_params):
                     if len(param.shape) < 2:
                         continue
                     U, S, Vh = torch.linalg.svd(param, full_matrices=False)
+                    # aux_mat = torch.randn(param.shape).to(self.device)                                      
+                    # U_aux, S_aux, Vh_aux = torch.linalg.svd(aux_mat, full_matrices=False)
+                    # new_param = U_aux @ torch.diag(S) @ Vh_aux
                     bounded_S = k * (1 - torch.exp(-S / k))
                     new_param = U @ torch.diag(bounded_S) @ Vh
                     params[model][key] = nn.Parameter(new_param)
