@@ -63,6 +63,8 @@ class SVD_analysis:
         levels = [3, 30]
         CASE = 'Vh'
 
+        pdb.set_trace()
+        
         for env in self.data:
             # if 'ant' == env or 'kitchen' == env or 'adroit_relocate' == env:
             #     continue
@@ -314,7 +316,7 @@ class SVD_analysis:
 
         for env, ax in zip(self.data, axes):
             runs = []
-            for run in self.data[env][layer]:
+            for run in self.data[env][layer]:                
                 array = self.data[env][layer][run]['S']
                 df = pd.DataFrame.from_dict(array, orient='index')
                 runs.append(df)

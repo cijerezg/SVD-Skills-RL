@@ -247,14 +247,26 @@ class VaLS(hyper_params):
                                                                  
         ####
 
+        SAMPLES = 64
+
+        expanded_z = next_z.reshape(1, next_z.shape[0], next_z.shape[1]).repeat(SAMPLES, 1, 1)
+        expanded_z = expanded_z + torch.randn(expanded_z.shape).to(self.device) / 8.0
+
+        expanded_obs = next_obs.reshape(1, next_obs.shape[0], next_obs.shape[1]).repeat(SAMPLES, 1, 1)
+        
+        target_critic_arg_aux = torch.cat([expanded_obs, expanded_z], dim=2)
+
         target_critic_arg = torch.cat([next_obs, next_z], dim=1)
         critic_arg = torch.cat([obs, z], dim=1)
         
         with torch.no_grad():                                
             z_prior = self.eval_skill_prior(obs, params)
 
-            q_target, _ = self.eval_critic(target_critic_arg, params,
+            # q_target, _ = self.eval_critic(target_critic_arg, params,
+            #                                target_critic=True)
+            q_target, _ = self.eval_critic(target_critic_arg_aux, params,
                                            target_critic=True)
+            q_target = q_target.mean(0)
 
         q, features = self.eval_critic(critic_arg, params)
         
