@@ -61,7 +61,7 @@ class VaLS(hyper_params):
         self.log_alpha_svals = torch.tensor(INIT_LOG_SVALS, dtype=torch.float32,
                                             requires_grad=True,
                                             device=self.device)
-        self.optimizer_alpha_svals = Adam([self.log_alpha_svals], lr=5 * args.learning_rate)
+        self.optimizer_alpha_svals = Adam([self.log_alpha_svals], lr=args.learning_rate)
 
         self.reward_per_episode = 0
         self.steps_per_episode = 0
@@ -190,10 +190,11 @@ class VaLS(hyper_params):
                         wandb.log({'Critic/Distance to init weights': dist_init1,
                                    'Policy/Distance to init weights Skills': dist_init_pol})
 
-            aux_val = True if self.log_data % self.log_data_freq == 0 else False
-            if aux_val:
+            aux_log_data = True if self.log_data % self.log_data_freq == 0 else False
+            update_target = True if self.iterations % 10 == 0 else False
+            
+            if aux_log_data or update_target:
                 params = self.update_target_critic(params)
-
            
         return params, next_obs, done
 
@@ -492,18 +493,19 @@ class VaLS(hyper_params):
         log_data = True if self.log_data % self.log_data_freq == 0 else False
         if log_data:
             wandb.log({'Critic/alpha svals': alpha_svals.detach().cpu(),
-                       'Critic/delta Qval max': delta_qval.max().detach().cpu(),
+                       'Critic/delta Qval max': delta_qval.abs().max().detach().cpu(),
                        'Critic/Error target critic': error.mean().detach().cpu(),
                        'Critic/Hist error target critic': wandb.Histogram(error.detach().cpu()),
                        'Critic/Normalized error': norm_error.detach().cpu(),
                        'Critic/Qval target': eval_target_critic})
-        
-        loss_alpha_svals = torch.exp(self.log_alpha_svals) * \
-            (self.delta_error - norm_error).detach()
 
-        self.optimizer_alpha_svals.zero_grad()
-        loss_alpha_svals.backward()
-        self.optimizer_alpha_svals.step()
+        else:
+            loss_alpha_svals = torch.exp(self.log_alpha_svals) * \
+                (self.delta_error - norm_error).detach()
+
+            self.optimizer_alpha_svals.zero_grad()
+            loss_alpha_svals.backward()
+            self.optimizer_alpha_svals.step()
         
         return params
 
@@ -523,8 +525,6 @@ class VaLS(hyper_params):
 
         
         
-        
-
     def get_gradient(self, x, params, key):
         grads = autograd.grad(x, params[key].values(), retain_graph=True,
                               allow_unused=True)
