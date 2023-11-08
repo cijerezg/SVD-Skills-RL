@@ -32,6 +32,7 @@ import math
 
 MAX_SKILL_KL = 100
 INIT_LOG_ALPHA = 0
+INIT_LOG_SVALS = 3
 
 class VaLS(hyper_params):
     def __init__(self,
@@ -56,6 +57,11 @@ class VaLS(hyper_params):
                                             requires_grad=True,
                                             device=self.device)
         self.optimizer_alpha_skill = Adam([self.log_alpha_skill], lr=args.learning_rate)
+
+        self.log_alpha_svals = torch.tensor(INIT_LOG_SVALS, dtype=torch.float32,
+                                            requires_grad=True,
+                                            device=self.device)
+        self.optimizer_alpha_svals = Adam([self.log_alpha_svals], lr=50 * args.learning_rate)
 
         self.reward_per_episode = 0
         self.steps_per_episode = 0
@@ -182,7 +188,12 @@ class VaLS(hyper_params):
                         dist_init_pol = self.distance_to_params(params, ref_params, 'SkillPolicy', 'SkillPolicy')
                     
                         wandb.log({'Critic/Distance to init weights': dist_init1,
-                                   'Policy/Distance to init weights Skills': dist_init_pol}) 
+                                   'Policy/Distance to init weights Skills': dist_init_pol})
+
+            aux_val = True if self.log_data % self.log_data_freq == 0 else False
+            if aux_val:
+                params = self.update_target_critic(params)
+
            
         return params, next_obs, done
 
@@ -242,19 +253,10 @@ class VaLS(hyper_params):
             wandb.log({'Critic/Mean diff dist rand': wandb.Histogram(mean_diff_rand.cpu()),
                        'Critic/Mean diff average rand': mean_diff_rand.mean().cpu(),
                        'Policy/Eval policy critic_random': eval_test_ave,
-                       'Reward batch': wandb.Histogram(rew.cpu())
+                       'Reward batch': wandb.Histogram(rew.cpu()),
                        })
                                                                  
         ####
-
-        SAMPLES = 64
-
-        expanded_z = next_z.reshape(1, next_z.shape[0], next_z.shape[1]).repeat(SAMPLES, 1, 1)
-        expanded_z = expanded_z + torch.randn(expanded_z.shape).to(self.device) / 8.0
-
-        expanded_obs = next_obs.reshape(1, next_obs.shape[0], next_obs.shape[1]).repeat(SAMPLES, 1, 1)
-        
-        target_critic_arg_aux = torch.cat([expanded_obs, expanded_z], dim=2)
 
         target_critic_arg = torch.cat([next_obs, next_z], dim=1)
         critic_arg = torch.cat([obs, z], dim=1)
@@ -262,11 +264,8 @@ class VaLS(hyper_params):
         with torch.no_grad():                                
             z_prior = self.eval_skill_prior(obs, params)
 
-            # q_target, _ = self.eval_critic(target_critic_arg, params,
-            #                                target_critic=True)
-            q_target, _ = self.eval_critic(target_critic_arg_aux, params,
+            q_target, _ = self.eval_critic(target_critic_arg, params,
                                            target_critic=True)
-            q_target = q_target.mean(0)
 
         q, features = self.eval_critic(critic_arg, params)
         
@@ -463,6 +462,68 @@ class VaLS(hyper_params):
     def compute_singular_vals_loss(self, features):
         S = torch.linalg.svdvals(features)
         return torch.square(S[0]) - torch.square(S[-1])
+
+    def update_target_critic(self, params):
+        batch = self.experience_buffer.sample(batch_size=self.batch_size)
+        next_obs = torch.from_numpy(batch.next_observations).to(self.device)
+        next_z = torch.from_numpy(batch.next_z).to(self.device)
+        rew = torch.from_numpy(batch.rewards).to(self.device)
+
+        critic_arg = torch.cat((next_obs, next_z), dim=1)
+
+        qval, _ = self.eval_critic(critic_arg, params, target_critic=True)
+
+        alpha_svals = torch.exp(self.log_alpha_svals)
+
+        params = self.rescale_singular_vals_no_optimizers(params, ['Target_critic'],
+                                                          alpha_svals)
+
+        delta_qval, _ = self.eval_critic(critic_arg, params, target_critic=True)
+
+
+        with torch.no_grad():
+            norm = torch.square(qval).mean()
+            error = F.mse_loss(qval, delta_qval, reduction='none')            
+            norm_error = error.mean() / norm
+
+        eval_target_critic = self.log_scatter_3d(qval, delta_qval, error, rew,
+                                                 'Q val', 'Delta Q val', 'Error', 'Reward')
+
+        log_data = True if self.log_data % self.log_data_freq == 0 else False
+        if log_data:
+            wandb.log({'Critic/alpha svals': alpha_svals.detach().cpu(),
+                       'Critic/delta Qval max': delta_qval.max().detach().cpu(),
+                       'Critic/Error target critic': error.mean().detach().cpu(),
+                       'Critic/Hist error target critic': wandb.Histogram(error.detach().cpu()),
+                       'Critic/Normalized error': norm_error.detach().cpu(),
+                       'Critic/Qval target': eval_target_critic})
+        
+        loss_alpha_svals = torch.exp(self.log_alpha_svals) * \
+            (self.delta_error - norm_error).detach()
+
+        self.optimizer_alpha_svals.zero_grad()
+        loss_alpha_svals.backward()
+        self.optimizer_alpha_svals.step()
+        
+        return params
+
+    def rescale_singular_vals_no_optimizers(self, params, keys, scale):
+                
+        with torch.no_grad():
+            for model in keys:
+                for key, param in params[model].items():
+                    if len(param.shape) < 2:
+                        continue
+                    U, S, Vh = torch.linalg.svd(param, full_matrices=False)
+                    bounded_S = scale * (1 - torch.exp(-S / scale))
+                    new_param = U @ torch.diag(bounded_S) @ Vh
+                    params[model][key] = nn.Parameter(new_param)
+
+        return params
+
+        
+        
+        
 
     def get_gradient(self, x, params, key):
         grads = autograd.grad(x, params[key].values(), retain_graph=True,

@@ -1,5 +1,6 @@
-python runs.py --algo SERENE-robust-Q-next --sing_val_scale 1 --sing_val_init 1 --sigma_max 2
-python runs.py --algo Replayratio-robust-Q-next --sing_val_scale 2 --sing_val_init 1 --sigma_max 2
+python runs.py --algo SPiRL-Target-critic --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.01
+python runs.py --algo SPiRL-Target-critic --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.1
+python runs.py --algo SPiRL-Target-critic --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.25
 
 
 # python runs.py --algo SERENE-Continuous-4 --sing_val_scale 1 --sing_val_init 4 --sigma_max 2
