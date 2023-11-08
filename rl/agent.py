@@ -61,7 +61,7 @@ class VaLS(hyper_params):
         self.log_alpha_svals = torch.tensor(INIT_LOG_SVALS, dtype=torch.float32,
                                             requires_grad=True,
                                             device=self.device)
-        self.optimizer_alpha_svals = Adam([self.log_alpha_svals], lr=50 * args.learning_rate)
+        self.optimizer_alpha_svals = Adam([self.log_alpha_svals], lr=5 * args.learning_rate)
 
         self.reward_per_episode = 0
         self.steps_per_episode = 0

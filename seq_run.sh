@@ -1,4 +1,4 @@
-python runs.py --algo SPiRL-Target-critic --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.01
+python runs.py --algo SPiRL-Target-critic-repeat --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.1
 python runs.py --algo SPiRL-Target-critic --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.1
 python runs.py --algo SPiRL-Target-critic --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.25
 
