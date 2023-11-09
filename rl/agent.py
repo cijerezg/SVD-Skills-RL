@@ -32,7 +32,7 @@ import math
 
 MAX_SKILL_KL = 100
 INIT_LOG_ALPHA = 0
-INIT_LOG_SVALS = 3
+INIT_LOG_SVALS = 4
 
 class VaLS(hyper_params):
     def __init__(self,
@@ -61,7 +61,7 @@ class VaLS(hyper_params):
         self.log_alpha_svals = torch.tensor(INIT_LOG_SVALS, dtype=torch.float32,
                                             requires_grad=True,
                                             device=self.device)
-        self.optimizer_alpha_svals = Adam([self.log_alpha_svals], lr=args.learning_rate)
+        self.optimizer_alpha_svals = Adam([self.log_alpha_svals], lr=10 * args.learning_rate)
 
         self.reward_per_episode = 0
         self.steps_per_episode = 0

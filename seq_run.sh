@@ -1,6 +1,5 @@
-python runs.py --algo SPiRL-Target-critic-every-10-.1 --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.1
-python runs.py --algo SPiRL-Target-critic-every-10-.2 --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.2
-python runs.py --algo SPiRL-Target-critic-every-10-.4 --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.4
+python runs.py --algo Replayratio-target-err-0.01 --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.01
+python runs.py --algo Replayratio-target-err-.1 --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.1
 
 
 # python runs.py --algo SERENE-Continuous-4 --sing_val_scale 1 --sing_val_init 4 --sigma_max 2

@@ -23,7 +23,7 @@ parser.add_argument('--algo', type=str)
 parser.add_argument('--sigma_max', type=float, default=1)
 parser.add_argument('--sing_val_scale', type=float, default=2)
 parser.add_argument('--sing_val_init', type=float, default=1)
-parser.add_argument('--error_delta', type=float, default=.1)
+parser.add_argument('--error_delta', type=float, default=.01)
 
 
 args = parser.parse_args()
