@@ -72,7 +72,7 @@ CASE_FOLDER = 'Baseline'
 if 'ant' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
                          'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': 4000,
+                         'reset_frequency': 8000,
                          'skill_length': 40,
                          'delta_skill': 8,
                          'test_freq': int(6.4e4) - 1}
@@ -80,7 +80,7 @@ if 'ant' in ENV_NAME:
 elif 'relocate' in ENV_NAME or 'Relocate' in ENV_NAME:
     hyperparams_dict  = {'max_iterations': int(6.4e4) - 1,
                          'buffer_size': int(6.4e4) - 1,
-                         'reset_frequency': 4000,
+                         'reset_frequency': 8000,
                          'skill_length': 10,
                          'delta_skill': 32,
                          'test_freq': int(6.4e4) - 1}

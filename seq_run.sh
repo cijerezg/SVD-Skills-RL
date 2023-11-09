@@ -1,5 +1,8 @@
-python runs.py --algo Replayratio-target-err-0.01 --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.01
-python runs.py --algo Replayratio-target-err-.1 --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.1
+python runs.py --algo Replayratio-normalized-updt-err-0.001 --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.001
+python runs.py --algo Replayratio-normalized-updt-err-0.01 --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.01
+python runs.py --algo Replayratio-normalized-uptd-err-0.1 --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.1
+
+# python runs.py --algo Replayratio-target-err-.1 --sing_val_scale 1 --sing_val_init 1 --sigma_max 2 --error_delta 0.1
 
 
 # python runs.py --algo SERENE-Continuous-4 --sing_val_scale 1 --sing_val_init 4 --sigma_max 2

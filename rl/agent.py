@@ -61,7 +61,7 @@ class VaLS(hyper_params):
         self.log_alpha_svals = torch.tensor(INIT_LOG_SVALS, dtype=torch.float32,
                                             requires_grad=True,
                                             device=self.device)
-        self.optimizer_alpha_svals = Adam([self.log_alpha_svals], lr=10 * args.learning_rate)
+        self.optimizer_alpha_svals = Adam([self.log_alpha_svals], lr=5 * args.learning_rate)
 
         self.reward_per_episode = 0
         self.steps_per_episode = 0
@@ -517,7 +517,10 @@ class VaLS(hyper_params):
                     if len(param.shape) < 2:
                         continue
                     U, S, Vh = torch.linalg.svd(param, full_matrices=False)
+                    norm_S = torch.norm(S)
                     bounded_S = scale * (1 - torch.exp(-S / scale))
+                    norm_bounded_S = torch.norm(bounded_S)
+                    bounded_S = bounded_S * norm_S / norm_bounded_S
                     new_param = U @ torch.diag(bounded_S) @ Vh
                     params[model][key] = nn.Parameter(new_param)
 
