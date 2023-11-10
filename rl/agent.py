@@ -315,7 +315,7 @@ class VaLS(hyper_params):
         alpha_skill = torch.exp(self.log_alpha_skill).detach()
         skill_prior_loss = alpha_skill * skill_prior
 
-        q_pi = q_pi.squeeze() * weights
+        q_pi = q_pi.squeeze()
         
         q_val_policy = -torch.mean(q_pi)
         skill_policy_loss = q_val_policy + skill_prior_loss
