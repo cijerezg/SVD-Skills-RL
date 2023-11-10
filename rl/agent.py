@@ -112,13 +112,13 @@ class VaLS(hyper_params):
                         keys = ['SkillPolicy', 'Critic']
                     ref_params = copy.deepcopy(params)
                     
-                    if self.Replayratio:
+                    if self.Replayratio or self.SERENE:
                         params, optimizers = reset_params(params, keys, optimizers, self.learning_rate)
                         params['Target_critic'] = copy.deepcopy(params['Critic'])
-                    elif self.SERENE:
-                        params, optimizers = self.rescale_singular_vals(params, keys, optimizers, self.learning_rate)
-                        params['Target_critic'] = copy.deepcopy(params['Critic'])                        
-                        self.singular_val_k = self.sing_val_factor * self.singular_val_k                        
+                    # elif self.SERENE:
+                    #     params, optimizers = self.rescale_singular_vals(params, keys, optimizers, self.learning_rate)
+                    #     params['Target_critic'] = copy.deepcopy(params['Critic'])                        
+                    #     self.singular_val_k = self.sing_val_factor * self.singular_val_k                        
                         
                     self.log_alpha_skill = torch.tensor(self.log_alpha_skill.item(), dtype=torch.float32,
                                                         requires_grad=True,
@@ -192,9 +192,10 @@ class VaLS(hyper_params):
 
             aux_log_data = True if self.log_data % self.log_data_freq == 0 else False
             update_target = True if self.iterations % 10 == 0 else False
-            
-            if aux_log_data or update_target:
-                params = self.update_target_critic(params)
+
+            if self.SERENE:            
+                if aux_log_data or update_target:
+                    params = self.update_target_critic(params)
            
         return params, next_obs, done
 
@@ -286,7 +287,7 @@ class VaLS(hyper_params):
         critic_loss = F.mse_loss(q.squeeze(), q_target.squeeze(),
                                  reduction='none')
 
-        if self.SERENE and 3 < 1: # This is to not run weight for control experiment.
+        if self.SERENE: # This is to not run weight for control experiment.
             with torch.no_grad():
                 weights = F.sigmoid(self.sigma_max * norm_cum_reward).squeeze()
         else:
