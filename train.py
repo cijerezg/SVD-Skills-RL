@@ -156,7 +156,7 @@ config.update(hyperparams_dict)
 def main(config=None):
     """Train all modules."""
     offline = 'Offline' if config['train_offline'] else 'Online'
-    with wandb.init(project=f'V1-SERENE-{ENV_NAME}-{offline}', config=config,
+    with wandb.init(project=f'camera-ready-SERENE-{ENV_NAME}-{offline}', config=config,
                     notes='Training.',
                     name=f'{EXP_NAME}'):
 
