@@ -9,22 +9,26 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap, LogNorm
 import pdb
 import math
+from matplotlib.lines import Line2D
 
 sns.set_theme(style='whitegrid')
 
-
-colors = [(0, '#ff8888'), (0.5, '#fad7a0'), (1, '#0000ff')]#(.1, '#5e5ef2'), (1, '#0000ff')]
-cmap = LinearSegmentedColormap.from_list('CustomCMap', colors)
+COLORS = {'indigo': '#332288',
+          'teal': '#44AA99',
+          'olive': '#999933',
+          'rose': '#CC6677',
+          'purple': '#AA4499'}
 
 
 class SVD_analysis:
     """Run full SVD analysis."""
     
-    def __init__(self, path, experiment):
+    def __init__(self, path, experiments, labels, exp_name):
         self.path = path
-        self.experiment = experiment
+        self.experiments = experiments
         self.load_data()
-        self.save_path = f'figures/{experiment}'
+        self.save_path = f'figures/{exp_name}'
+        self.labels = labels
         self.nn_layers = {'Critic/embed.weight-svd': 'Embedding layer',
                           'Critic/layer1.weight-svd': 'Hidden layer 1',
                           'Critic/layer2.weight-svd': 'Hidden layer 2',
@@ -38,102 +42,49 @@ class SVD_analysis:
         self.reward_dict = nested_dict()
 
         for env in os.listdir(self.path):
-            env_dir = os.path.join(self.path, env, self.experiment)
-            if os.path.isdir(env_dir):
-                for i, run in enumerate(os.listdir(env_dir)):
-                    folder_dir = os.path.join(env_dir, run)
-                    for j, file in enumerate(os.listdir(folder_dir)):
-                        iteration = int(file.replace('.npy', ''))
-                        if file.endswith('npy'):
-                            svd = np.load(os.path.join(folder_dir, file), allow_pickle=True).item()
-                            self.reward_dict[env][run][iteration] = svd['reward']
-                            for layer in svd:
-                                if 'out' in layer or 'Policy' in layer:
-                                    continue
-                                elif 'reward' in layer:
-                                    continue
-                                for element in svd[layer]:
-                                    self.data[env][layer][run][element][iteration] = np.array(svd[layer][element])
+            for exp in self.experiments:
+                env_dir = os.path.join(self.path, env, exp)
+                if os.path.isdir(env_dir):
+                    for i, run in enumerate(os.listdir(env_dir)):
+                        folder_dir = os.path.join(env_dir, run)
+                        for j, file in enumerate(os.listdir(folder_dir)):
+                            iteration = int(file.replace('.npy', ''))
+                            if file.endswith('npy'):
+                                svd = np.load(os.path.join(folder_dir, file), allow_pickle=True).item()
+                                self.reward_dict[env][exp][run][iteration] = svd['reward']
+                                for layer in svd:
+                                    if 'out' in layer or 'Policy' in layer:
+                                        continue
+                                    elif 'reward' in layer:
+                                        continue
+                                    for element in svd[layer]:
+                                        self.data[env][exp][layer][run][element][iteration] = np.array(svd[layer][element])
                                     
 
     def plots(self):
         path = f'{self.save_path}/plots'
         self.create_folder(path)
         self.delta = 0.01
-        levels = [3, 30]
-        CASE = 'Vh'
-
-        pdb.set_trace()
-        
+                
         for env in self.data:
-            # if 'ant' == env or 'kitchen' == env or 'adroit_relocate' == env:
-            #     continue
-            fig1, axes1 = plt.subplots(3, 1, figsize=(9, 16))
-            fig2, axes2 = plt.subplots(5, 2, figsize=(14, 16))
+            fig, axes = plt.subplots(5, 1, figsize=(14, 16), sharex=True)
+            for exp_i, exp in enumerate(self.data[env]):
+                for idx, layer in enumerate(self.data[env][exp]):
+                    ax = axes[idx]
+                    eranks = []
 
-            gs = axes2[-1, 0].get_gridspec()
+                    for run in self.data[env][exp][layer]:
+                        erank_df = self.compute_erank_array(self.data[env][exp][layer][run]['S'])
+                        eranks.append(erank_df)
+                    self.plot_explicit_eranks(eranks, exp_i, ax)
+                    if exp_i == 1:
+                        self.axis_adjust(ax, title=self.nn_layers[layer], yaxis='n-erank')
 
-            for ax in axes2[-1, :]:
-                ax.remove()
-                
-            axbig = fig2.add_subplot(gs[-1, :])
+                self.plot_reward(env, exp, exp_i, axes[-1])
 
-            all_eranks = {}
-            all_sing_vecs = {}
+            self.axis_adjust(axes[-1], yaxis='Reward')
 
-            for idx, layer in enumerate(self.data[env]):
-                # fig3, axes3 = plt.subplots(1, 8, figsize=(32, 9))
-                # axes3 = axes3.flatten()
-
-                ax2 = axes2[idx, :]
-                eranks = []
-                sing_vecs_implicit = []
-                sing_vecs_explicit = []
-
-                
-                for run in self.data[env][layer]:
-                    implicit, explicit = self.sing_vecs_computation(self.data[env][layer][run][CASE],
-                                                                    levels, CASE)
-
-                    ## Plot singular vectors
-                    # vecs = self.data[env][layer][run][CASE]
-                    # new = 0
-                    # print(layer)
-                    # for i in range(8):
-                    #     image = vecs[new]
-                    #     image = np.sort(image,axis=1)
-                    #     axes3[i].imshow(image, cmap='viridis')                       
-                    #     new = new + 2500 * 16
-
-
-                    sing_vecs_implicit.append(implicit)
-                    sing_vecs_explicit.append(explicit)
-
-                    erank_df = self.compute_erank_array(self.data[env][layer][run]['S'])
-                    eranks.append(erank_df)
-                # plt.show()
-
-                self.plot_explicit_sing_vecs(sing_vecs_explicit, ax2[1])
-                self.plot_explicit_eranks(eranks, ax2[0])
-
-                self.axis_adjust(ax2[0], title=self.nn_layers[layer], yaxis='n-erank')
-                self.axis_adjust(ax2[1], title=self.nn_layers[layer], yaxis=r'$\theta_{i}-\theta_{i+1}$')
-
-                all_eranks[layer] = eranks
-                all_sing_vecs[layer] = sing_vecs_implicit
-
-            self.plot_reward(env, axbig)
-            self.axis_adjust(axbig, yaxis='Reward')
-
-            self.adjust_and_save_plot(fig2, f'{path}/{env}_explicit')
-            self.plot_implicit_sing_vecs(all_sing_vecs, axes1[1])
-            self.plot_implicit_eranks(all_eranks, axes1[0])
-            self.plot_reward(env, axes1[2])
-
-            for i in range(3):
-                self.axis_adjust(axes1[i])
-
-            self.adjust_and_save_plot(fig1, f'{path}/{env}_implicit')
+            self.adjust_and_save_plot(fig, f'{path}/{env}_explicit')
 
     def sing_vecs_computation(self, vecs, levels, case):
         angles = self.delta_theta_sing_vec(vecs, case=case)
@@ -173,11 +124,13 @@ class SVD_analysis:
 
         ax.get_legend().remove()
 
-    def plot_explicit_eranks(self, eranks, ax):
+    def plot_explicit_eranks(self, eranks, exp_i, ax):
         eranks = pd.concat(eranks, axis=0)
         eranks['index'] = eranks.index / 1e5
-        sns.lineplot(data=eranks, x='index', y='erank', ax=ax,
-                     errorbar='se')
+        color = list(COLORS.values())[exp_i]
+        eranks['hue'] = 'test'
+        sns.lineplot(data=eranks, x='index', y='erank', hue='hue', ax=ax,
+                     errorbar='sd', palette=[color], legend=False)
 
     def plot_implicit_sing_vecs(self, vecs, ax):
         dfs = []
@@ -199,23 +152,39 @@ class SVD_analysis:
         dfs = pd.concat(dfs, axis=1)
         sns.lineplot(data=dfs, ax=ax)
 
-    def plot_reward(self, env, ax):
-        data = pd.DataFrame.from_dict(self.reward_dict[env])
-        data.columns = ['Reward'] * data.shape[1]
+    def plot_reward(self, env, exp, exp_i, ax):
+        data = pd.DataFrame.from_dict(self.reward_dict[env][exp])
+        data.columns = ['Reward'] * data.shape[1] 
         data.index = data.index / 1e5
-        sns.lineplot(data=data, ax=ax, errorbar='se')
+        color = list(COLORS.values())[exp_i]
+
+        sns.lineplot(data=data, ax=ax, errorbar='se', palette=[color])
         ax.get_legend().remove()
 
     def axis_adjust(self, ax, title=None, yaxis='Test'):
         ax.grid(True)
-        ax.tick_params(axis='both', labelsize=10)
-        ax.set_ylabel(yaxis)
+        ax.tick_params(axis='both', labelsize=15)
+        ax.set_ylabel(yaxis, fontsize=16)
         ax.set_xlabel('')
+        
+
         if title is not None:
-            ax.set_title(title, fontsize=12)
+            ax.set_title(title, fontsize=18)
 
     def adjust_and_save_plot(self, fig, savepath):
-        fig.supxlabel('Environment steps (1e5)', y=0.08, fontsize=14)
+        fig.supxlabel('Environment steps (1e5)', y=0.07, fontsize=16)
+
+        handles = []
+        labels = []
+
+        for label, color in zip(self.labels, COLORS.values()):
+            aux_label = Line2D([0], [0], label=label, color=color)
+            handles.append(aux_label)
+            labels.append(label)
+        
+        fig.legend(handles, labels, ncol=len(handles), bbox_to_anchor=(0.16, -.45, .5, .5),
+                   fancybox=True, shadow=True, prop={'size':20})
+
         plt.subplots_adjust(hspace=0.35)
         
         plt.savefig(f'{savepath}.png', bbox_inches='tight', dpi=340)
@@ -412,12 +381,9 @@ class SVD_analysis:
         
             
 PATH = 'results'
-EXPERIMENT = 'Replayratio'
+EXPERIMENTS = ['Replayratio', 'SPiRL']
+LABELS = ['SC-SPiRL', 'SPiRL']
 
-analysis = SVD_analysis(PATH, EXPERIMENT)
+analysis = SVD_analysis(PATH, EXPERIMENTS, LABELS, 'benchmark')
 
 analysis.plots()
-
-# analysis.singular_vecs_plot()
-# analysis.singular_vals()
-
